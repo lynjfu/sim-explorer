@@ -14,7 +14,7 @@ Accordingly, all computational simulations follow a fairly standard format, as d
 
    *Be specific where you can:* how many agents, and how many of each type; how many options or choices there are (for a landscape, the number of choices N and how strongly they interact, K; for a bandit, the number of arms); whether the task changes during a run. Anything you leave out, the assistant will set to a usual value and tell you what it chose.
 
-2. **Define their representation of the task:** What can agents see of the overall task, that impacts how they solve it? Do they explore around a baseline solution that their manager gives them (e.g. March 1991)? Do they explore relative to what their neighbors in their department of the organization know (e.g. Fang et al. 2010)? Do they only see a portion of all the possible actions the firm can do (e.g. Rivkin & Siggelkow, 2003)?
+2. **Define their representation of the task:** What can agents see of the overall task, that impacts how they solve it? Do they explore around a baseline solution that their manager gives them (e.g. March 1991)? Do they explore relative to what their neighbors in their department of the organization know (e.g. Fang et al. 2010)? Do they only see a portion of all the possible actions the firm can do (e.g. Rivkin & Siggelkow, 2003)? Are the payoffs the same for everyone (e.g. Levinthal & Workiewicz, 2018)? 
 
    *Be specific where you can:* how many alternatives an agent can consider in one period (one, a few nearby, all); whether it sees the true value of an alternative or its own estimate, and if an estimate, where that starts; who sees whom, if agents see each other at all.
 
@@ -71,6 +71,8 @@ Knudsen, T., & Srikanth, K. (2014). Coordinated exploration: Organizing joint se
 Koçak, Ö., Levinthal, D. A., & Puranam, P. (2023). The dual challenge of search and coordination for organizational adaptation: How structures of influence matter. *Organization Science*, 34(2), 851-869.
 
 Levinthal, D. A. (1997). Adaptation on rugged landscapes. *Management Science*, 43(7), 934-950.
+
+Levinthal, D. A., & Workiewicz, M. (2018). When two bosses are better than one: Nearly decomposable systems and organizational adaptation. *Organization Science*, 29(2), 207-224.
 
 March, J. G. (1991). Exploration and exploitation in organizational learning. *Organization Science*, 2(1), 71-87.
 
