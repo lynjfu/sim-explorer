@@ -44,6 +44,14 @@ Then copy everything in `2_PROMPT.md` into your AI assistant (Claude, ChatGPT, G
 
 You do not need to say what to measure. Every explorer shows the same two things over time: the performance of the system (how well the agents are doing at the task, averaged over agents), and, where it applies, the heterogeneity of the agents (how different they are from one another). The assistant may add one chart about the AI itself (how many follow it, how accurate it is).
 
+## Reflecting on the results
+
+Once your explorer runs, work with it, then write up what you found.
+
+8. **Refine the model.** Watch single runs with Step and compare with and without the AI. Where the agents do something you did not intend, or a chart does not show what you need, say so to the same AI assistant in the same chat ("when an agent ties, it should stay, not switch"; "plot the share of agents following the AI instead of trust"; "add a setting for how noisy the AI is") and replace `model.js` with the new version it gives you. Everything about your model can be changed this way: the agents' rules, the settings on the left, which quantities are charted and how they are labelled, the strip and the log. The page itself (its layout, its buttons, and the fact that every chart is a line over periods) stays the same for everyone. Keep a short list of what you changed and why.
+
+9. **What did you learn?** What did this exercise teach you about modelling organizational learning, and about where your intuition in question 7 was right or wrong? What paper might you write on the role of AI in organizational learning: what would be its question, its mechanism, and the result you would need to show?
+
 ## Example
 
 Two worked examples are in `examples/`: `ai-advisor` (people searching for a good project with an AI advisor; the model the explorer page shows by default) and `analysts-ai` (analysts choosing among five approaches with an AI that pools everyone's results). Each has the written answers, the `model.js` that came out, and the assistant's reply.

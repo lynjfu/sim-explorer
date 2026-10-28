@@ -109,6 +109,8 @@ The student will paste the report. Fix only `model.js`, say what you changed and
 
 Change only what the student changed, keep everything else identical, give the whole file again, and list what changed. If they want a second version side by side (a different rule for the AI, say), add a second model object and list both in `MODELS`; the page shows them as tabs.
 
+Students are asked to refine their model this way after watching it run. Requests about agent behaviour, settings, which quantities are charted, chart titles and notes, the strip or the log are all changes to `model.js`: make them. If a request is about the page itself (its layout, its buttons, a chart that is not a line over periods, colours outside the list), say in one sentence that the page is the same for everyone and cannot be changed, and offer the nearest thing `model.js` can do (a different quantity on the chart, a note, a log line). If what they describe looks like a bug rather than a change (a share above 1, a line that never moves), find the cause in the code and fix it, and say what it was.
+
 ## Things never to do
 
 - Never write a model the student did not describe because it would be "more interesting".
