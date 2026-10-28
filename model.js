@@ -8,12 +8,13 @@ const NK_AI_ADVISOR = {
   id: 'nkai',
   name: 'NK search with an AI advisor',
 
-  about: [
-    'M people each run a project made of N yes/no choices (which features to include, which markets to enter). A project’s performance is scored on an NK landscape: each choice contributes a payoff that depends on the choice itself and on K other choices, so changing one choice can raise or lower the payoff of others. Performance is shown divided by the best possible score on that landscape.',
-    'Without AI, each period a person looks at one alternative project that differs from their own in a single choice, sees its true performance, and switches if it is strictly better. With AI, an advisor looks at all N single-choice alternatives for that person, estimates each one’s performance with some error (σ), and recommends the alternative it estimates highest. A person who follows the advisor checks that recommended alternative instead of a random one; a person who does not follow searches alone that period.',
-    'Whether a person follows is a matter of trust. Each person follows the advisor with probability equal to their current trust, which starts at p0. After a recommended alternative has been checked, trust rises toward 1 at rate φ if the alternative was better than the person’s current project, and falls toward 0 at rate φ if it was not.',
-    'Puranam et al. (2015) mapping. Task environment: the NK payoff table, fixed during a run. Representation: a person knows their own project, its true performance, and the one alternative they check this period; the advisor sees all N single-choice alternatives, but through noisy estimates. Choice: a person switches if the checked alternative is strictly better; the advisor recommends its highest estimate; following happens with probability equal to trust. Feedback: the person sees the true performance of the alternative they checked. Transformation: positions update; trust updates toward 1 or 0 at rate φ; the landscape and the advisor’s accuracy never change.'
-  ],
+  about: {
+    task: 'M people each run a project made of N yes/no choices. A project is scored on an NK landscape: each choice’s payoff depends on K other choices, so there are many combinations that are locally good but not the best. Performance is shown divided by the best possible. The landscape is fixed during a run.',
+    representation: 'A person knows their own project and its true performance, and can look at one alternative per period (one choice flipped). The advisor sees all N single-choice alternatives, but through estimates with error σ.',
+    actions: 'Without AI, a person checks one random alternative and switches if it is strictly better. With AI, with probability equal to their trust they check the advisor’s recommendation (its highest estimate) instead; otherwise they search alone.',
+    feedback: 'The person sees the true performance of the alternative they checked.',
+    transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
+  },
   howToRead: [
     'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest; compare K = 0 (one peak, everyone reaches it) with K = 7 (many peaks, people get stuck). Raise σ to watch trust fall as the advisor misleads people, and the population drift back to searching alone.',
     'Press Compare to overlay “with AI” and “without AI” on the same charts, averaged over many runs. Heterogeneity falls as people converge on the same few peaks; watch whether the advisor makes everyone more alike. The state strip shows, for each of the N choices, the share of people currently choosing 1.'

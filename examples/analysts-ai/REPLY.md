@@ -1,6 +1,6 @@
 # What the assistant replied
 
-This is the reply an assistant produced from `ANSWERS.md` and `PROMPT.md` alone, with no access to anything else (trial on 28 October 2026; the assistant was a Claude model, so the prompt has not yet been tried with ChatGPT or Gemini). The model it wrote, `model.js` here, passed the page self-check unchanged: all four of its own checks, seed reproduction, every parameter extreme, 50 runs in 19 ms.
+This is the reply an assistant produced from `ANSWERS.md` and `PROMPT.md` alone, with no access to anything else (trial on 28 October 2026; the assistant was a Claude model, so the prompt has not yet been tried with ChatGPT or Gemini). Its `about` text was later shortened to the five-step form now required by the contract; otherwise the model it wrote, `model.js` here, passed the page self-check unchanged: all four of its own checks, seed reproduction, every parameter extreme, 50 runs in 19 ms.
 
 ---
 

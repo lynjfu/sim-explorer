@@ -31,7 +31,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 |---|---|---|
 | `id` | string | Letters and digits only. Used in element ids. |
 | `name` | string | Tab label and page heading. Two to five words. |
-| `about` | string[] | Paragraphs for the "Model" block, in plain language. The last paragraph maps the model onto task environment, representation, choice, feedback and transformation. |
+| `about` | object | The "Model" block: five short entries, one or two sentences each, in plain language: `{ task, representation, actions, feedback, transformation }`. The page labels them "Task environment", "Representation", "Actions", "Feedback", "Transformation". Say what the agents do, not how the code does it; numbers and symbols that are parameters (N, K, σ, φ) may be named. An array of paragraphs is still accepted but is longer than people want to read. |
 | `howToRead` | string[] | Paragraphs saying what to look for. The page appends, for each chart, a sentence spelling out every line's dash, colour and marker, so do not repeat that. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |

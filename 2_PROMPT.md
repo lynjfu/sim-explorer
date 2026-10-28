@@ -90,7 +90,7 @@ Follow `MODEL_CONTRACT.md` exactly. In addition:
 - Expose as parameters only what the student will actually vary (four to seven). Fixed constants go in the `about` text or a `// fixed:` comment.
 - Give every `seg` parameter the values the student will sweep. A `range` parameter is sweepable only if it carries a `sweep: [values]` list.
 - Keep a run cheap: a Batch of 200 runs should finish in under about five seconds in a browser. If it will not, reduce the defaults (rounds, number of agents, N) and say so.
-- Write `about` in plain language, ending with one paragraph that maps the model onto task environment, representation, choice, feedback and transformation. Write `howToRead` as what to look for, not as a description of line styles (the page writes those from the series fields).
+- Write `about` as five short entries, `{ task, representation, actions, feedback, transformation }`, one or two sentences each, in the student's own terms (the five questions they answered, condensed). That is all the model description the page shows; keep it short. Write `howToRead` as one or two sentences on what to look for, not as a description of line styles (the page writes those from the series fields).
 - Declare two to four `checks`: things the model must do if it is right, in plain words. Examples: "with the AI switched off, nobody follows it"; "when the task has one best answer, everyone finds it"; "when exploration is zero, nobody ever tries something new". Prefer exact or comparative checks over numeric thresholds you cannot compute (see the contract). The page runs them when the model loads.
 - The patterns in the contract (softmax choice, move-part-way updating) are offers, not defaults. If the student described a different rule ("pick the best, sometimes try one at random"), implement the student's rule.
 - Follow the chart rules: every line in a chart is told apart by its dash pattern and marker shape before its colour; colours are from the page's list; one to three lines per chart.
@@ -157,7 +157,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 |---|---|---|
 | `id` | string | Letters and digits only. Used in element ids. |
 | `name` | string | Tab label and page heading. Two to five words. |
-| `about` | string[] | Paragraphs for the "Model" block, in plain language. The last paragraph maps the model onto task environment, representation, choice, feedback and transformation. |
+| `about` | object | The "Model" block: five short entries, one or two sentences each, in plain language: `{ task, representation, actions, feedback, transformation }`. The page labels them "Task environment", "Representation", "Actions", "Feedback", "Transformation". Say what the agents do, not how the code does it; numbers and symbols that are parameters (N, K, σ, φ) may be named. An array of paragraphs is still accepted but is longer than people want to read. |
 | `howToRead` | string[] | Paragraphs saying what to look for. The page appends, for each chart, a sentence spelling out every line's dash, colour and marker, so do not repeat that. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |
@@ -268,12 +268,13 @@ const NK_AI_ADVISOR = {
   id: 'nkai',
   name: 'NK search with an AI advisor',
 
-  about: [
-    'M people each run a project made of N yes/no choices (which features to include, which markets to enter). A project’s performance is scored on an NK landscape: each choice contributes a payoff that depends on the choice itself and on K other choices, so changing one choice can raise or lower the payoff of others. Performance is shown divided by the best possible score on that landscape.',
-    'Without AI, each period a person looks at one alternative project that differs from their own in a single choice, sees its true performance, and switches if it is strictly better. With AI, an advisor looks at all N single-choice alternatives for that person, estimates each one’s performance with some error (σ), and recommends the alternative it estimates highest. A person who follows the advisor checks that recommended alternative instead of a random one; a person who does not follow searches alone that period.',
-    'Whether a person follows is a matter of trust. Each person follows the advisor with probability equal to their current trust, which starts at p0. After a recommended alternative has been checked, trust rises toward 1 at rate φ if the alternative was better than the person’s current project, and falls toward 0 at rate φ if it was not.',
-    'Puranam et al. (2015) mapping. Task environment: the NK payoff table, fixed during a run. Representation: a person knows their own project, its true performance, and the one alternative they check this period; the advisor sees all N single-choice alternatives, but through noisy estimates. Choice: a person switches if the checked alternative is strictly better; the advisor recommends its highest estimate; following happens with probability equal to trust. Feedback: the person sees the true performance of the alternative they checked. Transformation: positions update; trust updates toward 1 or 0 at rate φ; the landscape and the advisor’s accuracy never change.'
-  ],
+  about: {
+    task: 'M people each run a project made of N yes/no choices. A project is scored on an NK landscape: each choice’s payoff depends on K other choices, so there are many combinations that are locally good but not the best. Performance is shown divided by the best possible. The landscape is fixed during a run.',
+    representation: 'A person knows their own project and its true performance, and can look at one alternative per period (one choice flipped). The advisor sees all N single-choice alternatives, but through estimates with error σ.',
+    actions: 'Without AI, a person checks one random alternative and switches if it is strictly better. With AI, with probability equal to their trust they check the advisor’s recommendation (its highest estimate) instead; otherwise they search alone.',
+    feedback: 'The person sees the true performance of the alternative they checked.',
+    transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
+  },
   howToRead: [
     'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest; compare K = 0 (one peak, everyone reaches it) with K = 7 (many peaks, people get stuck). Raise σ to watch trust fall as the advisor misleads people, and the population drift back to searching alone.',
     'Press Compare to overlay “with AI” and “without AI” on the same charts, averaged over many runs. Heterogeneity falls as people converge on the same few peaks; watch whether the advisor makes everyone more alike. The state strip shows, for each of the N choices, the share of people currently choosing 1.'

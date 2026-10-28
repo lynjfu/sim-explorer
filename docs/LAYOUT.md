@@ -7,8 +7,8 @@ This is the pattern distilled from two working explorers: a live in-browser simu
 ```
 ┌ top bar: model name · tabs (one per model object) · hint ───────────────────────────┐
 ├ left (300px) ──────────┬ right ─────────────────────────────────────────────────────┤
-│ Model (about text,     │ controls: Reset Step Play Loop · speed · seed · Batch [S]   │
-│   Puranam mapping)     │           Sweep [param] · Copy CSV · t = 12 / 60 · readout │
+│ Model (five steps:     │ controls: Reset Step Play Loop · speed · seed · Batch [S]   │
+│   task … transformation│           Sweep [param] · Copy CSV · t = 12 / 60 · readout │
 │ How to read (per-chart │ charts: 1–4 cards, auto-fit grid, Chart.js                 │
 │   encodings in words)  │ sweep area (hidden until a sweep runs)                     │
 │ Parameters (seg /      │ state strip (~96px): glance at the current run             │
@@ -21,7 +21,7 @@ At widths under 760px the two columns stack and the page scrolls.
 
 ## Why each region exists
 
-- **About with the Puranam mapping**: a reader with no session context can tell what the agents are, what they know, how they choose, what updates. This is the text the researcher will later paste into a methods section, so it must be exact.
+- **Model, as five short steps** (task environment, representation, actions, feedback, transformation): a reader with no session context can tell what the agents are, what they know, how they choose, what they find out, what updates. Short enough to read in a minute; exact enough to paste into a methods section.
 - **How to read**: every encoding is stated in words, every time. A reader who cannot see colour must be able to read the charts from this text alone.
 - **Parameters as buttons rather than free text**: the values offered are the values the researcher will sweep, so the explorer and the production sweep share a grid. Sliders are for continuous parameters that the researcher wants to feel, not sweep.
 - **Seed**: a run that showed something interesting can be replayed and shown to a co-author. The log's first line records the seed and all parameter values.

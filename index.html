@@ -298,8 +298,13 @@ function runSelfCheck(models, opts){
     if (typeof m.id !== 'string' || !/^[A-Za-z0-9]+$/.test(m.id)) fail(`${tag}: id must be a string of letters and digits`);
     if (typeof m.name !== 'string') fail(`${tag}: name must be a string`);
     if (typeof m.about === 'string') m.about = [m.about];
+    if (m.about && typeof m.about === 'object' && !Array.isArray(m.about)){
+      const missing = ['task','representation','actions','feedback','transformation'].filter(k => typeof m.about[k] !== 'string' || !m.about[k].trim());
+      if (missing.length) fail(`${tag}: about is missing ${missing.join(', ')}`);
+      m.about = Object.assign({ __ok: true }, m.about); delete m.about.__ok;
+    } else if (Array.isArray(m.about)) note(`WARN ${tag}: about is a list of paragraphs; the five-step form {task, representation, actions, feedback, transformation} is shorter and preferred`);
     if (typeof m.howToRead === 'string') m.howToRead = [m.howToRead];
-    if (!Array.isArray(m.about) || !m.about.length) fail(`${tag}: about must be an array of paragraphs`);
+    if (!m.about || (Array.isArray(m.about) && !m.about.length)) fail(`${tag}: about must be the five-step object {task, representation, actions, feedback, transformation}`);
     if (!Array.isArray(m.howToRead)) fail(`${tag}: howToRead must be an array of paragraphs`);
     if (!(Number.isInteger(m.T) && m.T > 0)) fail(`${tag}: T must be a positive integer (periods per run)`);
     if (!Array.isArray(m.params) || !m.params.length) fail(`${tag}: params must be a non-empty array`);
@@ -403,6 +408,8 @@ const dashWord = d => !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : '
 const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
 const $ = id => document.getElementById(id);
 const STORE_CODE = 'explorer-model-code';
+const ABOUT_KEYS = [['task','Task environment'],['representation','Representation'],['actions','Actions'],['feedback','Feedback'],['transformation','Transformation']];
+const aboutHtml = ab => Array.isArray(ab) ? ab.map(p => `<p>${p}</p>`).join('') : ABOUT_KEYS.filter(([k]) => ab[k]).map(([k, lab]) => `<p><b>${lab}.</b> ${ab[k]}</p>`).join('');
 
 const App = {
   models: null, model: null, rng: null, seedUsed: null, t: -1, playing: false, looping: false, timer: null, interval: 80,
@@ -495,7 +502,7 @@ const App = {
   // ---- left panel ----
   buildLeft(){
     const m = this.model;
-    $('about-body').innerHTML = m.about.map(p => `<p>${p}</p>`).join('');
+    $('about-body').innerHTML = aboutHtml(m.about);
     const how = m.howToRead.map(p => `<p>${p}</p>`).concat(m.charts.map(c => `<p><b>${c.title}.</b> ${c.series.map(seriesWords).join(' · ')}.</p>`));
     if (m.compare) how.push(`<p><b>Compare.</b> Runs a batch twice, with ${m.compare.key} = ${m.compare.on} (“${m.compare.labelOn || 'on'}”: lines as above) and ${m.compare.key} = ${m.compare.off} (“${m.compare.labelOff || 'off'}”: same colours, dashed lines with hollow markers), and draws both on each chart.</p>`);
     $('howto-body').innerHTML = how.join('');
