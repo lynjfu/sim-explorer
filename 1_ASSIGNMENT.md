@@ -1,6 +1,6 @@
 # Simulation assignment
 
-Answer the questions below in writing, then follow the steps in `README.md` (copy `2_PROMPT.md` into your AI assistant, paste your answers underneath, load what it writes into the explorer page). Write for a smart colleague, not for a programmer.
+Answer the questions below in writing, then follow the steps in `README.md`: copy `2_PROMPT.md` into your AI assistant, paste your answers underneath, save the `model.js` it writes into your downloaded copy of this folder, and open `index.html`. Write for a smart colleague, not for a programmer.
 
 ## Role of computational simulations in organizational learning research
 
@@ -10,7 +10,7 @@ Unlike a formal (economic) model, simulations allow for the agents to update the
 
 Accordingly, all computational simulations follow a fairly standard format, as described in Puranam et al. (2015).
 
-1. **Define the task environment:** What's the nature of the task agents have to accomplish? Is it to find the best choice on a multi-armed bandit (e.g. Denrell & March, 2003)? Is it to find the highest peak on the landscape (e.g. Levinthal 1997)? Is it to coordinate on taking the same action (e.g. Kocak et al. 2023)? How many agents are tackling this problem, and are they of different types (e.g. manager vs. employee)?
+1. **Define the task environment:** What's the nature of the task agents have to accomplish? Is it to find the best choice on a multi-armed bandit (e.g. Denrell & March, 2001)? Is it to find the highest peak on the landscape (e.g. Levinthal 1997)? Is it to coordinate on taking the same action (e.g. Kocak et al. 2023)? How many agents are tackling this problem, and are they of different types (e.g. manager vs. employee)?
 
    *Be specific where you can:* how many agents, and how many of each type; how many options or choices there are (for a landscape, the number of choices N and how strongly they interact, K; for a bandit, the number of arms); whether the task changes during a run. Anything you leave out, the assistant will set to a usual value and tell you what it chose.
 
@@ -22,11 +22,11 @@ Accordingly, all computational simulations follow a fairly standard format, as d
 
    *Be specific where you can:* the rule, as a sentence (take the best thing seen; try something at random one time in ten; switch only if strictly better); what a tie does; how often, roughly, agents explore rather than exploit.
 
-4. **Define the feedback that agents receive:** When agents take an action, what is the feedback they receive about what this action resulted in? Do they see the direct consequence of their choices, such as the full value of the idea they proposed (e.g. Levinthal 1997)? Is this feedback mediated through a manager, such as their choice being elevated by a manger or not (e.g. March 1991)? Is the feedback obfuscated by the choices others are simultaneously making in the organization (e.g. Rivkin & Siggelkow)?
+4. **Define the feedback that agents receive:** When agents take an action, what is the feedback they receive about what this action resulted in? Do they see the direct consequence of their choices, such as the full value of the idea they proposed (e.g. Levinthal 1997)? Is this feedback mediated through a manager, such as their choice being elevated by a manger or not (e.g. March 1991)? Is the feedback obfuscated by the choices others are simultaneously making in the organization (e.g. Rivkin & Siggelkow, 2003)?
 
    *Be specific where you can:* what exactly is observed (the true value, a noisy version, only success or failure, only whether someone approved); how noisy; whether agents also see others' results.
 
-5. **Define the transformation process:** Upon receiving this feedback, how does this change agents' representation (2) or set of options they choose from (3)? Do they weight recent feedback more than earlier feedback (e.g. Denrell et al. 2004)? Do they incorporate more of what others in the organization know (e.g. Knudsen & Srikanth, 2016)?
+5. **Define the transformation process:** Upon receiving this feedback, how does this change agents' representation (2) or set of options they choose from (3)? Do they weight recent feedback more than earlier feedback (e.g. Denrell et al. 2004)? Do they incorporate more of what others in the organization know (e.g. Knudsen & Srikanth, 2014)?
 
    *Be specific where you can:* how far a new result moves a belief (all the way, a third of the way); whether anything becomes permanent (an agent leaves, a decision locks in) and what triggers it; whether agents act all at once on the situation at the start of the period or one after another; how many periods a run should last.
 
@@ -36,11 +36,11 @@ Accordingly, all computational simulations follow a fairly standard format, as d
 
 Develop a simulation that incorporates AI as an agent (or multiple agents) alongside human agents. Consider what type of organizational context AI is to be used in, and how each agent type is likely to interact with one another. Develop 2 simulations: one with the AI agent(s) and one without.
 
-Provide about 3-5 sentence answers for each of the above questions and for the two below. Then copy everything in `2_PROMPT.md` into your AI assistant (Claude, ChatGPT, Gemini or another), paste your answers underneath, and load the `model.js` it writes into the explorer page at https://carolynjfu.com/sim-explorer/ (the steps are in `README.md`). The "with" and "without" simulations are one model with the AI switched on or off; the page's Compare button overlays the two.
+Provide about 3-5 sentence answers for each of the above questions, specifically identifying the answers for the AI agent(s) as well as for the human agents: what the AI can see that a human cannot, how it decides or recommends, whether and how it can be wrong, how the human agents respond to it, and whether it changes over time. State what "without AI" means (the same human agents doing the same task alone, with everything else unchanged). Then answer question 7.
 
-7. **The AI agent (or agents):** Answer the five questions above for the AI as an agent type of its own. What can the AI see that a human cannot (more options at once, everyone's past results, more history)? How does it decide what to do or what to recommend? Is it always right, or can it be wrong, and by how much? How do the human agents respond to it: always follow it, follow it with some probability, follow it only when it has worked before? Does the AI itself change over time? Finally, say what "without AI" means: the same human agents doing the same task alone, with everything else unchanged.
+7. **What you expect:** What do you think will happen with the AI compared with without it, and why? This does not shape the code; it tells you what to look for when you run it, and it is what you will compare against what you actually see.
 
-8. **What you expect:** What do you think will happen with the AI compared with without it, and why? This does not shape the code; it tells you what to look for when you run it, and it is what you will compare against what you actually see.
+Then copy everything in `2_PROMPT.md` into your AI assistant (Claude, ChatGPT, Gemini or another), paste your answers underneath, save the `model.js` it writes into your downloaded copy of this folder, and open `index.html` (the steps are in `README.md`). The "with" and "without" simulations are one model with the AI switched on or off; the page's Compare button overlays the two.
 
 You do not need to say what to measure. Every explorer shows the same two things over time: the performance of the system (how well the agents are doing at the task, averaged over agents), and, where it applies, the heterogeneity of the agents (how different they are from one another). The assistant may add one chart about the AI itself (how many follow it, how accurate it is).
 
@@ -50,8 +50,22 @@ Two worked examples are in `examples/`: `ai-advisor` (people searching for a goo
 
 ## References
 
+Anjos, F., & Reagans, R. (2013). Commitment, learning, and alliance performance: A formal analysis using an agent-based network formation model. *The Journal of Mathematical Sociology*, 37(1), 1-23.
+
+Denrell, J., Fang, C., & Levinthal, D. A. (2004). From T-mazes to labyrinths: Learning from model-based feedback. *Management Science*, 50(10), 1366-1378.
+
+Denrell, J., & March, J. G. (2001). Adaptation as information restriction: The hot stove effect. *Organization Science*, 12(5), 523-538.
+
+Fang, C., Lee, J., & Schilling, M. A. (2010). Balancing exploration and exploitation through structural design: The isolation of subgroups and organizational learning. *Organization Science*, 21(3), 625-642.
+
+Knudsen, T., & Srikanth, K. (2014). Coordinated exploration: Organizing joint search by multiple specialists to overcome mutual confusion and joint myopia. *Administrative Science Quarterly*, 59(3), 409-441.
+
 Koçak, Ö., Levinthal, D. A., & Puranam, P. (2023). The dual challenge of search and coordination for organizational adaptation: How structures of influence matter. *Organization Science*, 34(2), 851-869.
+
+Levinthal, D. A. (1997). Adaptation on rugged landscapes. *Management Science*, 43(7), 934-950.
+
+March, J. G. (1991). Exploration and exploitation in organizational learning. *Organization Science*, 2(1), 71-87.
 
 Puranam, P., Stieglitz, N., Osman, M., & Pillutla, M. M. (2015). Modelling bounded rationality in organizations: Progress and prospects. *Academy of Management Annals*, 9(1), 337-392.
 
-<!-- The reference list in Simulation guidelines.docx ends with "…"; the works cited in the questions above are not yet listed here. -->
+Rivkin, J. W., & Siggelkow, N. (2003). Balancing search and stability: Interdependencies among elements of organizational design. *Management Science*, 49(3), 290-311.

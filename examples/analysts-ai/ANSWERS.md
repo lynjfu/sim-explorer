@@ -1,3 +1,5 @@
+*(These answers were the input to a trial of the prompt, written on an earlier version of the assignment form that asked about the AI agent as a separate question 7 and about outcomes as question 8. The current form asks for the AI within each stage, and never asks about outcomes.)*
+
 Just build it; do not ask me questions, make the usual assumptions and tell me what they were.
 
 ## 0. The setting
