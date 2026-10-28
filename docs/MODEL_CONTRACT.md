@@ -32,7 +32,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 | `id` | string | Letters and digits only. Used in element ids. |
 | `name` | string | Tab label and page heading. Two to five words. |
 | `about` | object | The "Model" block: five short entries, one or two sentences each, in plain language: `{ task, representation, actions, feedback, transformation }`. The page labels them "Task environment", "Representation", "Actions", "Feedback", "Transformation". Say what the agents do, not how the code does it; numbers and symbols that are parameters (N, K, σ, φ) may be named. An array of paragraphs is still accepted but is longer than people want to read. |
-| `howToRead` | string[] | Paragraphs saying what to look for. The page appends, for each chart, a sentence spelling out every line's dash, colour and marker, so do not repeat that. |
+| `howToRead` | string[] | Optional. One to three sentences on what to look for across the whole model. Shown as hover text (and on click) behind an ⓘ beside the Model heading, not as a block of text. The page writes each chart's line encodings itself under the chart, so do not repeat those. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |
 | `compare` | object | Optional. `{ key, on, off, labelOn, labelOff }`: the parameter and the two values the Compare button overlays (for this assignment: the AI on/off switch). |
@@ -61,12 +61,13 @@ Any other runtime field (`env`, `agents`, `t`, …) is yours. Do not name one `p
 ### Chart definition
 
 ```js
-{ id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, series:[
+{ id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, note:'Compare K = 0 with K = 7.', series:[
   { key:'mean_perf', label:'mean over people', color:'blue',   dash:[],    marker:'circle',   hollow:false },
   { key:'best_perf', label:'best person',      color:'orange', dash:[6,3], marker:'triangle', hollow:true  },
 ]}
 ```
 
+- `note` (optional): one or two sentences on what to look for in this chart, shown as hover text behind an ⓘ beside the chart title.
 - `key` must be a numeric field of the record returned by `stepPeriod` (`null` allowed for "no value this round").
 - `color`: one of `blue, orange, green, yellow, sky, purple, black`, used in that order. They are a colour-blind-safe set.
 - `dash`: `[]` solid, `[6,3]` dashed, `[2,3]` dotted. `marker`: `circle, triangle, rect, rectRot, cross, star`. `hollow: true` draws the marker unfilled.

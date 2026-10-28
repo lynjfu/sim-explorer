@@ -56,6 +56,10 @@ code{font-family:var(--mono);font-size:.92em}
 .block h2{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:500;margin-bottom:6px}
 .block p{font-size:12.5px;color:var(--muted);margin-bottom:6px;max-width:60ch}
 .block p b{color:var(--fg);font-weight:500}
+.info{background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0 3px;line-height:1;vertical-align:baseline}
+.info:hover{text-decoration:underline}
+.tip{font-size:12px;color:var(--fg);background:var(--card);border:1px solid var(--track);border-radius:3px;padding:6px 8px;margin:4px 0 8px;line-height:1.4}
+.tip.off{display:none}
 .param{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .param .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
 .param .lab .val{font-family:var(--mono);font-size:11.5px;color:var(--fg)}
@@ -142,8 +146,7 @@ label.ctl input[type=file]{display:none}
 
 <div id="main">
   <div id="left">
-    <div class="block" id="about"><h2>Model</h2><div id="about-body"></div></div>
-    <div class="block" id="howto"><h2>How to read</h2><div id="howto-body"></div></div>
+    <div class="block" id="about"><h2>Model <button class="info" id="about-info" aria-label="what to look for">ⓘ</button></h2><div id="about-tip" class="tip off"></div><div id="about-body"></div></div>
     <div class="block"><h2>Parameters</h2><div id="params"></div></div>
     <div class="block"><h2>Notes (saved in this browser only)</h2><textarea id="notes" placeholder="Observations, questions, what to change next…"></textarea></div>
   </div>
@@ -168,17 +171,17 @@ label.ctl input[type=file]{display:none}
     </div>
 
     <div id="controls">
-      <button class="ctl" id="btn-reset">Reset</button>
-      <button class="ctl" id="btn-step">Step</button>
-      <button class="ctl primary" id="btn-play">Play</button>
-      <button class="ctl" id="btn-loop">Loop</button>
-      <span class="grp"><label for="speed">speed</label><input type="range" id="speed" min="10" max="400" step="10" value="80"></span>
-      <span class="grp"><label for="seed">seed</label><input type="number" id="seed" placeholder="random" min="0" step="1"></span>
-      <span class="grp"><button class="ctl" id="btn-batch">Batch</button><input type="number" id="batch-S" value="200" min="2" step="1" aria-label="number of runs"> runs</span>
+      <button class="ctl" id="btn-reset" title="Start a new run with the current parameters (paused). A typed seed is reused; otherwise a new one is drawn.">Reset</button>
+      <button class="ctl" id="btn-step" title="Advance one period. The charts, the state strip and the log update; use it to check a mechanism period by period.">Step</button>
+      <button class="ctl primary" id="btn-play" title="Run the current run to its end, or pause it. At the end, Play starts a new run.">Play</button>
+      <button class="ctl" id="btn-loop" title="Run after run, a new one each time the last ends, until pressed again. Shows the spread of paths, not just one.">Loop</button>
+      <span class="grp"><label for="speed" title="Delay between periods when playing; left is slower.">speed</label><input type="range" id="speed" min="10" max="400" step="10" value="80"></span>
+      <span class="grp"><label for="seed" title="Type a number to make the next run reproducible. Leave empty for a random seed; the log's first line records the one used.">seed</label><input type="number" id="seed" placeholder="random" min="0" step="1"></span>
+      <span class="grp"><button class="ctl" id="btn-batch" title="Average many independent runs (the number in the box). Charts show the mean with a band of one standard deviation; final-period means go to the log and the CSV.">Batch</button><input type="number" id="batch-S" value="200" min="2" step="1" aria-label="number of runs"> runs</span>
       <button class="ctl off" id="btn-compare">Compare</button>
-      <span class="grp"><button class="ctl" id="btn-sweep">Sweep</button><select id="sweep-param" aria-label="parameter to sweep"></select></span>
-      <button class="ctl" id="btn-csv" disabled>Copy CSV</button>
-      <span id="counter">t = 0 / 0</span>
+      <span class="grp"><button class="ctl" id="btn-sweep" title="Vary one parameter over its listed values, a batch per value, and plot the final-period outcome against it. Other parameters stay as set.">Sweep</button><select id="sweep-param" aria-label="parameter to sweep"></select></span>
+      <button class="ctl" id="btn-csv" disabled title="Copy the numbers behind the last Batch, Compare or Sweep to the clipboard, and show them below.">Copy CSV</button>
+      <span id="counter" title="Current period of this run, or what the charts are showing (a batch, a comparison, a sweep).">t = 0 / 0</span>
       <span id="readout"></span>
     </div>
 
@@ -305,7 +308,7 @@ function runSelfCheck(models, opts){
     } else if (Array.isArray(m.about)) note(`WARN ${tag}: about is a list of paragraphs; the five-step form {task, representation, actions, feedback, transformation} is shorter and preferred`);
     if (typeof m.howToRead === 'string') m.howToRead = [m.howToRead];
     if (!m.about || (Array.isArray(m.about) && !m.about.length)) fail(`${tag}: about must be the five-step object {task, representation, actions, feedback, transformation}`);
-    if (!Array.isArray(m.howToRead)) fail(`${tag}: howToRead must be an array of paragraphs`);
+    if (m.howToRead != null && !Array.isArray(m.howToRead)) fail(`${tag}: howToRead, if given, must be an array of sentences`);
     if (!(Number.isInteger(m.T) && m.T > 0)) fail(`${tag}: T must be a positive integer (periods per run)`);
     if (!Array.isArray(m.params) || !m.params.length) fail(`${tag}: params must be a non-empty array`);
     if (!Array.isArray(m.charts) || !m.charts.length) fail(`${tag}: charts must be a non-empty array`);
@@ -494,7 +497,7 @@ const App = {
     $('title-el').textContent = this.model.name; document.title = this.model.name;
     this.model.p = {}; for (const d of this.model.params) this.model.p[d.key] = d.default;
     this.buildLeft(); this.buildCharts(this.model.charts); this.buildSweepSelect();
-    const cmp = $('btn-compare'); if (this.model.compare){ cmp.classList.remove('off'); cmp.textContent = `Compare ${this.model.compare.labelOn || 'on'} vs ${this.model.compare.labelOff || 'off'}`; } else cmp.classList.add('off');
+    const cmp = $('btn-compare'); if (this.model.compare){ const c = this.model.compare; cmp.classList.remove('off'); cmp.textContent = `Compare ${c.labelOn || 'on'} vs ${c.labelOff || 'off'}`; cmp.title = `Run the batch twice, with ${c.key} = ${c.on} (“${c.labelOn || 'on'}”: solid lines, filled markers) and ${c.key} = ${c.off} (“${c.labelOff || 'off'}”: same colours, dashed lines, hollow markers), drawn on the same charts.`; } else cmp.classList.add('off');
     $('sweep-area').classList.remove('on');
     this.reset(true);
   },
@@ -503,9 +506,9 @@ const App = {
   buildLeft(){
     const m = this.model;
     $('about-body').innerHTML = aboutHtml(m.about);
-    const how = m.howToRead.map(p => `<p>${p}</p>`).concat(m.charts.map(c => `<p><b>${c.title}.</b> ${c.series.map(seriesWords).join(' · ')}.</p>`));
-    if (m.compare) how.push(`<p><b>Compare.</b> Runs a batch twice, with ${m.compare.key} = ${m.compare.on} (“${m.compare.labelOn || 'on'}”: lines as above) and ${m.compare.key} = ${m.compare.off} (“${m.compare.labelOff || 'off'}”: same colours, dashed lines with hollow markers), and draws both on each chart.</p>`);
-    $('howto-body').innerHTML = how.join('');
+    const how = (m.howToRead || []).join(' ');
+    const tip = $('about-tip'), info = $('about-info'); tip.textContent = how; tip.classList.add('off'); info.style.display = how ? '' : 'none'; info.title = how;
+    info.onclick = () => tip.classList.toggle('off');
     const box = $('params'); box.innerHTML = '';
     for (const d of m.params){
       const row = document.createElement('div'); row.className = 'param';
@@ -575,7 +578,9 @@ const App = {
     const box = $('charts'); box.innerHTML = '';
     for (const c of spec){
       const wrap = document.createElement('div'); wrap.className = 'chart';
-      wrap.innerHTML = `<div class="ttl">${c.title}</div><div class="cv"><canvas id="cv-${c.id}"></canvas></div><div class="how">${c.series.map(seriesWords).join(' · ')}</div>`;
+      const note = c.note || '';
+      wrap.innerHTML = `<div class="ttl">${c.title}${note ? ` <button class="info" title="${note.replace(/"/g,'&quot;')}" aria-label="what to look for in this chart">ⓘ</button>` : ''}</div><div class="tip off"></div><div class="cv"><canvas id="cv-${c.id}" aria-label="${c.title}"></canvas></div><div class="how">${c.series.map(seriesWords).join(' · ')}</div>`;
+      if (note){ const t = wrap.querySelector('.tip'); t.textContent = note; wrap.querySelector('.info').addEventListener('click', () => t.classList.toggle('off')); }
       box.appendChild(wrap);
       this.charts[c.id] = this.makeChart($('cv-' + c.id), c, this.model.T, 'period');
     }

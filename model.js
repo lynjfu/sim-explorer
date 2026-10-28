@@ -16,8 +16,7 @@ const NK_AI_ADVISOR = {
     transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
   },
   howToRead: [
-    'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest; compare K = 0 (one peak, everyone reaches it) with K = 7 (many peaks, people get stuck). Raise σ to watch trust fall as the advisor misleads people, and the population drift back to searching alone.',
-    'Press Compare to overlay “with AI” and “without AI” on the same charts, averaged over many runs. Heterogeneity falls as people converge on the same few peaks; watch whether the advisor makes everyone more alike. The state strip shows, for each of the N choices, the share of people currently choosing 1.'
+    'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest. Raise σ to watch trust fall as the advisor misleads people. Press Compare to overlay with and without AI.'
   ],
   T: 60,
 
@@ -36,15 +35,15 @@ const NK_AI_ADVISOR = {
   compare: { key:'ai', on:'on', off:'off', labelOn:'with AI', labelOff:'without AI' },
 
   charts: [
-    { id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, series:[
+    { id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, note:'Compare K = 0 (one peak: everyone reaches 1) with K = 7 (many peaks: people get stuck below it). With the advisor, the rise is faster.', series:[
       { key:'mean_perf',    label:'mean over people',       color:'blue',   dash:[],    marker:'circle',   hollow:false },
       { key:'best_perf',    label:'best person',            color:'orange', dash:[6,3], marker:'triangle', hollow:true  },
     ]},
-    { id:'trust', title:'Trust in the advisor', yMin:0, yMax:1, series:[
+    { id:'trust', title:'Trust in the advisor', yMin:0, yMax:1, note:'Trust falls whenever a followed recommendation did not help, including once a person is stuck on a peak and nothing can help. Set φ = 0 to freeze trust at p0.', series:[
       { key:'mean_trust',   label:'mean trust',             color:'green',  dash:[],    marker:'rect',     hollow:false },
       { key:'share_follow', label:'share who followed the advisor this period', color:'purple', dash:[2,3], marker:'rectRot', hollow:true },
     ]},
-    { id:'het', title:'Heterogeneity of projects', yMin:0, yMax:1, series:[
+    { id:'het', title:'Heterogeneity of projects', yMin:0, yMax:1, note:'Heterogeneity falls as people converge on the same few peaks. Watch whether the advisor makes everyone more alike, and how fast everyone becomes stuck.', series:[
       { key:'diversity',    label:'mean difference between two people’s projects (÷ N)', color:'blue',   dash:[],    marker:'rect',  hollow:false },
       { key:'share_peak',   label:'share stuck at a local peak',   color:'orange', dash:[6,3], marker:'cross', hollow:true },
     ]},

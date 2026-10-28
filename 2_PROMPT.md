@@ -90,7 +90,7 @@ Follow `MODEL_CONTRACT.md` exactly. In addition:
 - Expose as parameters only what the student will actually vary (four to seven). Fixed constants go in the `about` text or a `// fixed:` comment.
 - Give every `seg` parameter the values the student will sweep. A `range` parameter is sweepable only if it carries a `sweep: [values]` list.
 - Keep a run cheap: a Batch of 200 runs should finish in under about five seconds in a browser. If it will not, reduce the defaults (rounds, number of agents, N) and say so.
-- Write `about` as five short entries, `{ task, representation, actions, feedback, transformation }`, one or two sentences each, in the student's own terms (the five questions they answered, condensed). That is all the model description the page shows; keep it short. Write `howToRead` as one or two sentences on what to look for, not as a description of line styles (the page writes those from the series fields).
+- Write `about` as five short entries, `{ task, representation, actions, feedback, transformation }`, one or two sentences each, in the student's own terms (the five questions they answered, condensed). That is all the model description the page shows; keep it short. Write `howToRead` as one to three sentences on what to look for across the model, and give each chart a one-sentence `note` on what to look for in it; both appear only as hover text behind an ⓘ, so keep them short. Never describe line styles (the page writes those from the series fields).
 - Declare two to four `checks`: things the model must do if it is right, in plain words. Examples: "with the AI switched off, nobody follows it"; "when the task has one best answer, everyone finds it"; "when exploration is zero, nobody ever tries something new". Prefer exact or comparative checks over numeric thresholds you cannot compute (see the contract). The page runs them when the model loads.
 - The patterns in the contract (softmax choice, move-part-way updating) are offers, not defaults. If the student described a different rule ("pick the best, sometimes try one at random"), implement the student's rule.
 - Follow the chart rules: every line in a chart is told apart by its dash pattern and marker shape before its colour; colours are from the page's list; one to three lines per chart.
@@ -158,7 +158,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 | `id` | string | Letters and digits only. Used in element ids. |
 | `name` | string | Tab label and page heading. Two to five words. |
 | `about` | object | The "Model" block: five short entries, one or two sentences each, in plain language: `{ task, representation, actions, feedback, transformation }`. The page labels them "Task environment", "Representation", "Actions", "Feedback", "Transformation". Say what the agents do, not how the code does it; numbers and symbols that are parameters (N, K, σ, φ) may be named. An array of paragraphs is still accepted but is longer than people want to read. |
-| `howToRead` | string[] | Paragraphs saying what to look for. The page appends, for each chart, a sentence spelling out every line's dash, colour and marker, so do not repeat that. |
+| `howToRead` | string[] | Optional. One to three sentences on what to look for across the whole model. Shown as hover text (and on click) behind an ⓘ beside the Model heading, not as a block of text. The page writes each chart's line encodings itself under the chart, so do not repeat those. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |
 | `compare` | object | Optional. `{ key, on, off, labelOn, labelOff }`: the parameter and the two values the Compare button overlays (for this assignment: the AI on/off switch). |
@@ -187,12 +187,13 @@ Any other runtime field (`env`, `agents`, `t`, …) is yours. Do not name one `p
 ### Chart definition
 
 ```js
-{ id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, series:[
+{ id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, note:'Compare K = 0 with K = 7.', series:[
   { key:'mean_perf', label:'mean over people', color:'blue',   dash:[],    marker:'circle',   hollow:false },
   { key:'best_perf', label:'best person',      color:'orange', dash:[6,3], marker:'triangle', hollow:true  },
 ]}
 ```
 
+- `note` (optional): one or two sentences on what to look for in this chart, shown as hover text behind an ⓘ beside the chart title.
 - `key` must be a numeric field of the record returned by `stepPeriod` (`null` allowed for "no value this round").
 - `color`: one of `blue, orange, green, yellow, sky, purple, black`, used in that order. They are a colour-blind-safe set.
 - `dash`: `[]` solid, `[6,3]` dashed, `[2,3]` dotted. `marker`: `circle, triangle, rect, rectRot, cross, star`. `hollow: true` draws the marker unfilled.
@@ -276,8 +277,7 @@ const NK_AI_ADVISOR = {
     transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
   },
   howToRead: [
-    'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest; compare K = 0 (one peak, everyone reaches it) with K = 7 (many peaks, people get stuck). Raise σ to watch trust fall as the advisor misleads people, and the population drift back to searching alone.',
-    'Press Compare to overlay “with AI” and “without AI” on the same charts, averaged over many runs. Heterogeneity falls as people converge on the same few peaks; watch whether the advisor makes everyone more alike. The state strip shows, for each of the N choices, the share of people currently choosing 1.'
+    'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest. Raise σ to watch trust fall as the advisor misleads people. Press Compare to overlay with and without AI.'
   ],
   T: 60,
 
@@ -296,15 +296,15 @@ const NK_AI_ADVISOR = {
   compare: { key:'ai', on:'on', off:'off', labelOn:'with AI', labelOff:'without AI' },
 
   charts: [
-    { id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, series:[
+    { id:'perf', title:'Performance (÷ best possible)', yMin:0, yMax:1, note:'Compare K = 0 (one peak: everyone reaches 1) with K = 7 (many peaks: people get stuck below it). With the advisor, the rise is faster.', series:[
       { key:'mean_perf',    label:'mean over people',       color:'blue',   dash:[],    marker:'circle',   hollow:false },
       { key:'best_perf',    label:'best person',            color:'orange', dash:[6,3], marker:'triangle', hollow:true  },
     ]},
-    { id:'trust', title:'Trust in the advisor', yMin:0, yMax:1, series:[
+    { id:'trust', title:'Trust in the advisor', yMin:0, yMax:1, note:'Trust falls whenever a followed recommendation did not help, including once a person is stuck on a peak and nothing can help. Set φ = 0 to freeze trust at p0.', series:[
       { key:'mean_trust',   label:'mean trust',             color:'green',  dash:[],    marker:'rect',     hollow:false },
       { key:'share_follow', label:'share who followed the advisor this period', color:'purple', dash:[2,3], marker:'rectRot', hollow:true },
     ]},
-    { id:'het', title:'Heterogeneity of projects', yMin:0, yMax:1, series:[
+    { id:'het', title:'Heterogeneity of projects', yMin:0, yMax:1, note:'Heterogeneity falls as people converge on the same few peaks. Watch whether the advisor makes everyone more alike, and how fast everyone becomes stuck.', series:[
       { key:'diversity',    label:'mean difference between two people’s projects (÷ N)', color:'blue',   dash:[],    marker:'rect',  hollow:false },
       { key:'share_peak',   label:'share stuck at a local peak',   color:'orange', dash:[6,3], marker:'cross', hollow:true },
     ]},
