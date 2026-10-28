@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulation Explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Layout: one-screen workbench. Parameters and reading guide on the left; controls, charts, state strip and event log on the right. */
+:root{
+  --bg:#f3f4f6; --panel:#e9ebef; --card:#ffffff; --fg:#1f2328; --muted:#5c6470; --faint:#9aa1ab; --rule:#d3d7dd;
+  --accent:#2f4b6e; --accent-fg:#ffffff; --track:#cfd4db; --warn:#8a5a00; --warn-bg:#fff4d6;
+  /* Okabe–Ito data palette: colour-blind safe. Colour is always the second encoding after line style and marker. */
+  --oi-blue:#0072B2; --oi-orange:#D55E00; --oi-green:#009E73; --oi-yellow:#F0E442; --oi-sky:#56B4E9; --oi-purple:#CC79A7; --oi-black:#1f2328;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --oi-black:#e6e8eb; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark; }}
+:root[data-theme="dark"]{
+  --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --oi-black:#e6e8eb; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark; }
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px;line-height:1.45;display:flex;flex-direction:column;overflow:hidden}
+button{font-family:inherit;font-size:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+code{font-family:var(--mono);font-size:.92em}
+
+/* Top bar: title + model tabs + chips */
+#topbar{display:flex;align-items:center;gap:14px;padding:8px 16px;border-bottom:1px solid var(--rule);background:var(--panel);flex-shrink:0;flex-wrap:wrap}
+#topbar h1{font-size:15px;font-weight:600;letter-spacing:.01em;white-space:nowrap}
+#tabs{display:flex;gap:2px}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:6px 12px;color:var(--muted);cursor:pointer}
+.tab-btn.active{color:var(--fg);border-bottom-color:var(--accent)}
+#topbar .spacer{flex:1}
+#topbar .hint{font-size:12px;color:var(--muted)}
+.chip{font-family:var(--mono);font-size:11px;padding:3px 8px;border:1px solid var(--track);border-radius:3px;background:var(--card);color:var(--muted);cursor:pointer}
+.chip.bad{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
+
+/* Main split */
+#main{display:flex;flex:1;min-height:0}
+#left{width:300px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--rule);overflow-y:auto;padding:18px 16px 24px;display:flex;flex-direction:column;gap:18px;min-width:0}
+#right{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+@media (max-width:760px){
+  body{overflow:auto}
+  #main{flex-direction:column}
+  #left{width:100%;border-right:none;border-bottom:1px solid var(--rule)}
+  #right{min-height:80vh}
+}
+
+/* Left panel blocks */
+.block h2{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:500;margin-bottom:6px}
+.block p{font-size:12.5px;color:var(--muted);margin-bottom:6px;max-width:60ch}
+.block p b{color:var(--fg);font-weight:500}
+.param{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.param .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+.param .lab .val{font-family:var(--mono);font-size:11.5px;color:var(--fg)}
+.param .note{font-size:11px;color:var(--faint)}
+.seg{display:flex;border:1px solid var(--track);border-radius:3px;overflow:hidden}
+.seg button{flex:1;padding:5px 4px;background:none;border:none;border-right:1px solid var(--track);font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer}
+.seg button:last-child{border-right:none}
+.seg button.active{background:var(--accent);color:var(--accent-fg)}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;background:var(--track);border-radius:2px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--accent);border:none;cursor:pointer}
+select,input[type=number],input[type=text]{font-family:var(--mono);font-size:11.5px;background:var(--card);color:var(--fg);border:1px solid var(--track);border-radius:3px;padding:5px 8px;width:100%}
+textarea{width:100%;min-height:90px;font-family:var(--sans);font-size:12.5px;background:var(--card);color:var(--fg);border:1px solid var(--track);border-radius:3px;padding:8px;resize:vertical}
+
+/* Loader and self-check boxes (top of the right column) */
+.box{border-bottom:1px solid var(--rule);padding:10px 16px;background:var(--panel);flex-shrink:0;max-height:46vh;overflow:auto}
+.box.off{display:none}
+.box .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:6px}
+.box p{font-size:12.5px;color:var(--muted);margin-bottom:8px;max-width:90ch}
+.box textarea{font-family:var(--mono);font-size:11px;min-height:120px}
+.box .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+.box pre{font-family:var(--mono);font-size:11px;white-space:pre-wrap;color:var(--fg);line-height:1.5}
+.box pre .fail{color:var(--warn);font-weight:500}
+label.ctl input[type=file]{display:none}
+
+/* Controls bar */
+#controls{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap;flex-shrink:0;background:var(--bg)}
+.ctl{padding:6px 14px;background:var(--card);border:1px solid var(--track);border-radius:3px;cursor:pointer;font-size:12.5px;display:inline-block}
+.ctl:hover{border-color:var(--accent)}
+.ctl.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.ctl:disabled{opacity:.5;cursor:default}
+.ctl.off{display:none}
+#controls .grp{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+#controls .grp input,#controls .grp select{width:auto;padding:4px 6px}
+#controls .grp input[type=number]{width:72px}
+#controls .grp input[type=range]{width:90px}
+#counter{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--fg);font-variant-numeric:tabular-nums}
+#readout{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* Charts */
+#charts{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;padding:12px 16px 6px;overflow:auto}
+.chart{display:flex;flex-direction:column;min-width:0;min-height:220px;background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 6px}
+.chart .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:2px}
+.chart .cv{flex:1;position:relative;min-height:150px}
+.chart .how{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.chart .how b{color:var(--fg);font-weight:500}
+#sweep-area{display:none;border-top:1px dashed var(--rule);padding:10px 16px 6px;flex-shrink:0}
+#sweep-area.on{display:block}
+#sweep-area .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:6px}
+#sweep-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+#sweep-charts .chart{min-height:200px}
+
+/* State strip */
+#state{flex-shrink:0;background:var(--panel);border-top:1px solid var(--rule);padding:8px 16px;display:flex;gap:18px;align-items:stretch;min-height:96px;overflow-x:auto}
+#state .ttl{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:4px}
+.cells{display:flex;gap:4px}
+.cell{width:38px;height:62px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4px 2px 3px;background:var(--track);border-radius:2px;position:relative;overflow:hidden;flex-shrink:0}
+.cell .idx{font-family:var(--mono);font-size:9px;color:var(--muted);z-index:1}
+.cell .bar{position:absolute;left:0;right:0;bottom:0;background:var(--accent);opacity:.55}
+.cell .v{font-family:var(--mono);font-size:12px;font-weight:500;z-index:1}
+#state .txt{font-family:var(--mono);font-size:11px;color:var(--muted);align-self:center;white-space:pre-line}
+
+/* Event log */
+#log{height:110px;flex-shrink:0;border-top:1px solid var(--rule);overflow-y:auto;padding:6px 16px;background:var(--bg)}
+.line{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7;white-space:nowrap}
+.line:last-child{color:var(--fg)}
+
+/* CSV box */
+#csvbox{display:none;border-top:1px solid var(--rule);padding:6px 16px;font-size:11px;color:var(--muted)}
+#csvbox.on{display:block}
+#csvbox textarea{min-height:70px;font-family:var(--mono);font-size:10.5px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1 id="title-el">Explorer</h1>
+  <div id="tabs"></div>
+  <span class="spacer"></span>
+  <button class="chip" id="chip-source" title="Which model code is running">model: …</button>
+  <button class="chip" id="chip-check" title="Show the self-check report">self-check: …</button>
+  <button class="chip" id="chip-load" title="Paste or choose a model.js">Load model</button>
+</div>
+
+<div id="main">
+  <div id="left">
+    <div class="block" id="about"><h2>Model</h2><div id="about-body"></div></div>
+    <div class="block" id="howto"><h2>How to read</h2><div id="howto-body"></div></div>
+    <div class="block"><h2>Parameters</h2><div id="params"></div></div>
+    <div class="block"><h2>Notes (saved in this browser only)</h2><textarea id="notes" placeholder="Observations, questions, what to change next…"></textarea></div>
+  </div>
+
+  <div id="right">
+    <div id="loader" class="box off">
+      <div class="ttl">Load a model</div>
+      <p>Paste the whole <code>model.js</code> that your AI assistant wrote, or choose the file. The code runs only in your browser and nothing is uploaded. This page remembers the pasted model in this browser until you press “Use built-in model”.</p>
+      <textarea id="model-code" placeholder="// paste model.js here, then press Load" aria-label="model code"></textarea>
+      <div class="row">
+        <button class="ctl primary" id="btn-load-code">Load pasted code</button>
+        <label class="ctl">Choose model.js file <input type="file" id="model-file" accept=".js,.txt"></label>
+        <button class="ctl" id="btn-builtin">Use built-in model</button>
+        <span id="load-msg"></span>
+      </div>
+    </div>
+    <div id="checkbox" class="box off">
+      <div class="ttl">Self-check</div>
+      <p>Run automatically when a model loads. A failing line is something to paste back to your AI assistant, together with the question “please fix this”.</p>
+      <pre id="check-text"></pre>
+      <div class="row"><button class="ctl" id="btn-copy-check">Copy report</button><button class="ctl" id="btn-rerun-check">Run again</button><span id="check-msg"></span></div>
+    </div>
+
+    <div id="controls">
+      <button class="ctl" id="btn-reset">Reset</button>
+      <button class="ctl" id="btn-step">Step</button>
+      <button class="ctl primary" id="btn-play">Play</button>
+      <button class="ctl" id="btn-loop">Loop</button>
+      <span class="grp"><label for="speed">speed</label><input type="range" id="speed" min="10" max="400" step="10" value="80"></span>
+      <span class="grp"><label for="seed">seed</label><input type="number" id="seed" placeholder="random" min="0" step="1"></span>
+      <span class="grp"><button class="ctl" id="btn-batch">Batch</button><input type="number" id="batch-S" value="200" min="2" step="1" aria-label="number of runs"> runs</span>
+      <button class="ctl off" id="btn-compare">Compare</button>
+      <span class="grp"><button class="ctl" id="btn-sweep">Sweep</button><select id="sweep-param" aria-label="parameter to sweep"></select></span>
+      <button class="ctl" id="btn-csv" disabled>Copy CSV</button>
+      <span id="counter">t = 0 / 0</span>
+      <span id="readout"></span>
+    </div>
+
+    <div id="charts"></div>
+
+    <div id="sweep-area"><div class="ttl" id="sweep-title">Sweep</div><div id="sweep-charts"></div></div>
+
+    <div id="state"></div>
+
+    <div id="log"></div>
+    <div id="csvbox"><span id="csv-msg"></span><textarea id="csv-text" readonly aria-label="CSV data"></textarea></div>
+  </div>
+</div>
+
+<!-- UTILITIES: pure JavaScript, no DOM. Shared by every model. model.js may call any of these. scripts/smoke_test.sh runs this block headlessly. -->
+<script id="utils">
+'use strict';
+
+// Seeded RNG (mulberry32). Models must draw randomness ONLY from the rng they are handed,
+// never from Math.random, so a seed reproduces a run exactly.
+function makeRng(seed){
+  let a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function randInt(rng, n){ return Math.floor(rng() * n); }                 // 0..n-1
+function randn(rng){ let u, v; do { u = rng(); } while (u === 0); v = rng(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+function shuffle(rng, arr){ for (let j = arr.length-1; j > 0; j--){ const k = randInt(rng, j+1); [arr[j], arr[k]] = [arr[k], arr[j]]; } return arr; }
+function softmax(arr, tau){ const mx = Math.max(...arr); const e = arr.map(x => Math.exp((x-mx)/tau)); const s = e.reduce((a,b)=>a+b,0); return e.map(x=>x/s); }
+function sampleCategorical(rng, probs){ let r = rng(), c = 0; for (let i = 0; i < probs.length; i++){ c += probs[i]; if (r < c) return i; } return probs.length-1; }
+function fmt(x, d=3){ return (x == null || Number.isNaN(x)) ? '—' : Number(x).toFixed(d); }
+function mean(a){ let s = 0, n = 0; for (const v of a){ if (v != null && !Number.isNaN(v)){ s += v; n++; } } return n ? s/n : null; }
+function final(B, key){ return B.mean[key][B.T-1]; }                      // final-period batch mean of a series
+
+// NK landscape generator. N bits, each bit interacting with K others.
+// interaction: 'ring' = bit i interacts with the next K bits in ring order (adjacent-ring convention);
+//              'random' = K distinct random partners per bit.
+// Returns fitness of every one of the 2^N strings (mean of per-bit contributions in [0,1]),
+// per-bit contribution tables, a local-peak flag per string, and the global max.
+function generateNK(rng, N, K, interaction='ring'){
+  K = Math.max(0, Math.min(K, N-1));
+  const numStr = 1 << N;
+  const partners = [];
+  for (let i = 0; i < N; i++){
+    if (interaction === 'ring'){ const p = []; for (let k = 1; k <= K; k++) p.push((i + k) % N); partners.push(p); }
+    else { const others = shuffle(rng, Array.from({length:N}, (_, j) => j).filter(j => j !== i)); partners.push(others.slice(0, K)); }
+  }
+  const tables = [];
+  for (let i = 0; i < N; i++){ const t = new Float64Array(1 << (K+1)); for (let k = 0; k < t.length; k++) t[k] = rng(); tables.push(t); }
+  const bitvals = new Array(numStr);
+  const fit = new Float64Array(numStr);
+  for (let s = 0; s < numStr; s++){
+    const bv = new Float64Array(N); let sum = 0;
+    for (let i = 0; i < N; i++){
+      let key = (s >> i) & 1;
+      for (let d = 0; d < K; d++) key |= (((s >> partners[i][d]) & 1) << (d+1));
+      bv[i] = tables[i][key]; sum += bv[i];
+    }
+    bitvals[s] = bv; fit[s] = sum / N;
+  }
+  const isPeak = new Uint8Array(numStr);
+  let gmax = 0, gargmax = 0;
+  for (let s = 0; s < numStr; s++){
+    let peak = 1;
+    for (let i = 0; i < N; i++){ if (fit[s ^ (1 << i)] > fit[s]){ peak = 0; break; } }
+    isPeak[s] = peak;
+    if (fit[s] > gmax){ gmax = fit[s]; gargmax = s; }
+  }
+  let nPeaks = 0; for (let s = 0; s < numStr; s++) nPeaks += isPeak[s];
+  return { N, K, partners, tables, bitvals, fit, isPeak, gmax, gargmax, nPeaks, numStr };
+}
+function bitsOf(s, N){ let out = ''; for (let i = N-1; i >= 0; i--) out += (s >> i) & 1; return out; }
+function hamming(a, b){ let x = a ^ b, c = 0; while (x){ c += x & 1; x >>= 1; } return c; }
+
+// Headless batch runner (no DOM). Used by Batch, Compare, Sweep, the self-check and scripts/smoke_test.sh.
+// Returns per-period mean and SD of every series key across S runs.
+function runBatch(model, S, seed){
+  const keys = model.charts.flatMap(c => c.series.map(s => s.key));
+  const T = model.T;
+  const sum = {}, sq = {}, n = {};
+  for (const k of keys){ sum[k] = new Float64Array(T); sq[k] = new Float64Array(T); n[k] = new Int32Array(T); }
+  for (let s = 0; s < S; s++){
+    const rng = makeRng((seed + s * 7919) >>> 0);
+    model.generateEnvironment(rng); model.initState(rng);
+    for (let t = 0; t < T; t++){
+      const rec = model.stepPeriod(rng);
+      for (const k of keys){ const v = rec[k]; if (v != null && !Number.isNaN(v)){ sum[k][t] += v; sq[k][t] += v*v; n[k][t]++; } }
+    }
+  }
+  const out = { S, T, keys, mean:{}, sd:{} };
+  for (const k of keys){
+    out.mean[k] = Array.from({length:T}, (_, t) => n[k][t] ? sum[k][t]/n[k][t] : null);
+    out.sd[k]   = Array.from({length:T}, (_, t) => n[k][t] > 1 ? Math.sqrt(Math.max(0, sq[k][t]/n[k][t] - (sum[k][t]/n[k][t])**2)) : null);
+  }
+  return out;
+}
+
+// Self-check. Runs the same checks in the browser and in scripts/smoke_test.sh.
+// Returns { ok, failures, lines[] }. Lines beginning with "FAIL" are failures; "WARN" lines are advice.
+function runSelfCheck(models, opts){
+  opts = opts || {}; const S = opts.runs || 30; const lines = []; let failures = 0;
+  const fail = s => { lines.push('FAIL ' + s); failures++; };
+  const note = s => lines.push(s);
+  const COLORS = ['blue','orange','green','yellow','sky','purple','black'];
+  const MARKERS = ['circle','triangle','rect','rectRot','cross','star'];
+  const now = () => (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  if (!Array.isArray(models) || models.length === 0){ fail('MODELS must be a non-empty array: end model.js with `const MODELS = [ YOUR_MODEL ];`'); return { ok:false, failures, lines }; }
+  for (const m of models){
+    const tag = m && m.id ? m.id : '(no id)';
+    // 1. fields
+    if (!m || typeof m !== 'object'){ fail('an entry of MODELS is not an object'); continue; }
+    if (typeof m.id !== 'string' || !/^[A-Za-z0-9]+$/.test(m.id)) fail(`${tag}: id must be a string of letters and digits`);
+    if (typeof m.name !== 'string') fail(`${tag}: name must be a string`);
+    if (typeof m.about === 'string') m.about = [m.about];
+    if (typeof m.howToRead === 'string') m.howToRead = [m.howToRead];
+    if (!Array.isArray(m.about) || !m.about.length) fail(`${tag}: about must be an array of paragraphs`);
+    if (!Array.isArray(m.howToRead)) fail(`${tag}: howToRead must be an array of paragraphs`);
+    if (!(Number.isInteger(m.T) && m.T > 0)) fail(`${tag}: T must be a positive integer (periods per run)`);
+    if (!Array.isArray(m.params) || !m.params.length) fail(`${tag}: params must be a non-empty array`);
+    if (!Array.isArray(m.charts) || !m.charts.length) fail(`${tag}: charts must be a non-empty array`);
+    for (const f of ['generateEnvironment','initState','stepPeriod','logLine']) if (typeof m[f] !== 'function') fail(`${tag}: ${f} must be a function`);
+    if (failures) continue;
+    const keys = m.charts.flatMap(c => c.series.map(s => s.key));
+    for (const d of m.params){
+      if (!d.key || !d.label || !d.type) fail(`${tag}: a parameter is missing key, label or type`);
+      if (d.type === 'seg' || d.type === 'select'){ if (!Array.isArray(d.values) || !d.values.length) fail(`${tag}: parameter ${d.key} needs a values list`); else if (!d.values.some(v => v === d.default)) fail(`${tag}: parameter ${d.key}: default ${JSON.stringify(d.default)} is not one of its values`); }
+      else if (d.type === 'range'){ if (![d.min,d.max,d.step,d.default].every(x => typeof x === 'number')) fail(`${tag}: parameter ${d.key} needs numeric min, max, step, default`); if (d.sweep && !Array.isArray(d.sweep)) fail(`${tag}: parameter ${d.key}: sweep must be a list of values`); }
+      else fail(`${tag}: parameter ${d.key}: type must be seg, range or select`);
+    }
+    if (m.params.length > 8) note(`WARN ${tag}: ${m.params.length} parameters; four to seven is easier to use`);
+    for (const c of m.charts){
+      if (!c.id || !c.title || !Array.isArray(c.series) || !c.series.length) fail(`${tag}: a chart needs id, title and a series list`);
+      else {
+        const combos = new Set();
+        for (const s of c.series){
+          if (!s.key || !s.label) fail(`${tag}: chart ${c.id}: every series needs key and label`);
+          if (s.color && !COLORS.includes(s.color)) fail(`${tag}: chart ${c.id}: series ${s.key}: color must be one of ${COLORS.join(', ')}`);
+          if (s.marker && !MARKERS.includes(s.marker)) fail(`${tag}: chart ${c.id}: series ${s.key}: marker must be one of ${MARKERS.join(', ')}`);
+          const combo = JSON.stringify([s.dash || [], s.marker || 'circle']);
+          if (combos.has(combo)) fail(`${tag}: chart ${c.id}: two series share the same dash and marker; a reader without colour cannot tell them apart`);
+          combos.add(combo);
+        }
+        if (c.series.length > 4) note(`WARN ${tag}: chart ${c.id} has ${c.series.length} series; one to three is readable`);
+      }
+    }
+    if (m.charts.length > 4) note(`WARN ${tag}: ${m.charts.length} charts; two to four fit on a laptop screen`);
+    if (m.compare){
+      const d = m.params.find(x => x.key === m.compare.key);
+      if (!d) fail(`${tag}: compare.key '${m.compare.key}' is not a parameter`);
+      else if (d.type !== 'range' && !(d.values.some(v => v === m.compare.on) && d.values.some(v => v === m.compare.off))) fail(`${tag}: compare.on / compare.off must both be values of parameter ${d.key}`);
+    }
+    if (failures) continue;
+    // 2. one seeded run reproduces itself; every series key is numeric
+    m.p = {}; for (const d of m.params) m.p[d.key] = d.default;
+    const one = seed => { const rng = makeRng(seed); m.generateEnvironment(rng); m.initState(rng); let last = null; for (let t = 0; t < m.T; t++) last = m.stepPeriod(rng); return last; };
+    let a, b;
+    try { a = one(42); b = one(42); } catch (e){ fail(`${tag}: a run at the default parameters threw: ${e.message}`); continue; }
+    if (!a || typeof a !== 'object') { fail(`${tag}: stepPeriod must return a record object`); continue; }
+    for (const k of keys){
+      if (typeof a[k] !== 'number' || Number.isNaN(a[k])) fail(`${tag}: series key '${k}' is not a number in the record returned by stepPeriod`);
+      else if (a[k] !== b[k]) fail(`${tag}: seed 42 did not reproduce '${k}' (${a[k]} vs ${b[k]}); randomness must come only from the rng argument`);
+    }
+    if (a.bitShare && !(Array.isArray(a.bitShare) || ArrayBuffer.isView(a.bitShare))) fail(`${tag}: bitShare must be an array of per-bit shares in [0,1]`);
+    try { const l = m.logLine(a); if (typeof l !== 'string') fail(`${tag}: logLine must return a string`); } catch (e){ fail(`${tag}: logLine threw: ${e.message}`); }
+    if (failures) continue;
+    // 3. batch at defaults, with timing
+    const t0 = now(); const B = runBatch(m, S, 1); const ms = now() - t0;
+    note(`${tag} @ defaults, ${S} runs, T=${m.T}: ` + keys.map(k => `${k}=${fmt(final(B,k))}±${fmt(B.sd[k][B.T-1])}`).join('  '));
+    const est200 = ms / S * 200;
+    note(`${tag}: ${S} runs took ${Math.round(ms)} ms; a Batch of 200 would take about ${(est200/1000).toFixed(1)} s` + (est200 > 5000 ? '  WARN: slow; reduce T, the number of agents, or N' : ''));
+    // 4. every parameter at each of its extreme values must run without throwing
+    for (const d of m.params){
+      const vals = d.type === 'range' ? [d.min, d.max] : [d.values[0], d.values[d.values.length - 1]];
+      for (const v of vals){
+        const saved = m.p[d.key]; m.p[d.key] = v;
+        try { runBatch(m, 3, 7); } catch (e){ fail(`${tag}: ${d.key}=${v} threw: ${e.message}`); }
+        m.p[d.key] = saved;
+      }
+    }
+    // 5. the model's own checks
+    if (Array.isArray(m.checks)){
+      for (const ch of m.checks){
+        const saved = Object.assign({}, m.p); Object.assign(m.p, ch.set || {});
+        const ctx = { batch: (over, S2) => { const keep = Object.assign({}, m.p); Object.assign(m.p, over || {}); const Bx = runBatch(m, S2 || ch.runs || S, 3); Object.assign(m.p, keep); return Bx; } };
+        try {
+          const Bc = runBatch(m, ch.runs || S, 3);
+          const r = ch.test(Bc, ctx);
+          if (r === true) note(`ok   ${tag}: ${ch.name}`);
+          else fail(`${tag}: ${ch.name}` + (typeof r === 'string' ? ` (${r})` : ''));
+        } catch (e){ fail(`${tag}: check '${ch.name}' threw: ${e.message}`); }
+        m.p = saved;
+      }
+    } else note(`WARN ${tag}: no checks[] declared; add one or two sanity checks the model must pass`);
+    for (const d of m.params) m.p[d.key] = d.default;
+  }
+  lines.push(failures ? `SELF-CHECK: ${failures} failure(s)` : 'SELF-CHECK: all checks passed');
+  return { ok: failures === 0, failures, lines };
+}
+</script>
+<!-- /UTILITIES -->
+
+<!-- The built-in model. A student's own model.js replaces this file, or is pasted through "Load model". -->
+<script src="model.js"></script>
+
+<script>
+'use strict';
+// ===================================================================
+// CHROME — loader, self-check, parameter panel, charts, controls, state strip, log, batch, compare, sweep.
+// Generic: reads the model contract. Never edited per model.
+// ===================================================================
+const OI = { blue:'--oi-blue', orange:'--oi-orange', green:'--oi-green', yellow:'--oi-yellow', sky:'--oi-sky', purple:'--oi-purple', black:'--oi-black' };
+const css = () => getComputedStyle(document.documentElement);
+const tok = k => css().getPropertyValue(k).trim();
+const colorOf = name => tok(OI[name] || '--oi-black');
+const MARKER_WORD = { circle:'circles', triangle:'triangles', rect:'squares', rectRot:'diamonds', cross:'crosses', star:'stars' };
+const dashWord = d => !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : 'dashed');
+const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
+const $ = id => document.getElementById(id);
+const STORE_CODE = 'explorer-model-code';
+
+const App = {
+  models: null, model: null, rng: null, seedUsed: null, t: -1, playing: false, looping: false, timer: null, interval: 80,
+  charts: {}, sweepCharts: {}, chartSpec: null, mode: 'single', lastBatch: null, lastSweep: null, csv: '', check: null,
+
+  init(){
+    $('btn-reset').addEventListener('click', () => { this.stopLoop(); this.reset(false); });
+    $('btn-step').addEventListener('click', () => { this.stopLoop(); this.stopPlay(); if (this.mode !== 'single') this.reset(false); this.step(); });
+    $('btn-play').addEventListener('click', () => { this.stopLoop(); this.togglePlay(); });
+    $('btn-loop').addEventListener('click', () => { if (this.looping){ this.stopLoop(); this.stopPlay(); } else this.startLoop(); });
+    $('btn-batch').addEventListener('click', () => this.batch());
+    $('btn-compare').addEventListener('click', () => this.compare());
+    $('btn-sweep').addEventListener('click', () => this.sweep());
+    $('btn-csv').addEventListener('click', () => this.copyText(this.csv, 'csvbox', 'csv-text', 'csv-msg', 'CSV'));
+    $('speed').addEventListener('input', e => { this.interval = 410 - parseInt(e.target.value); });
+    this.interval = 410 - 80;
+    const notes = $('notes');
+    try { notes.value = localStorage.getItem('explorer-notes-' + location.pathname) || ''; } catch(e){}
+    notes.addEventListener('input', () => { try { localStorage.setItem('explorer-notes-' + location.pathname, notes.value); } catch(e){} });
+    // loader
+    $('chip-load').addEventListener('click', () => $('loader').classList.toggle('off'));
+    $('chip-check').addEventListener('click', () => { $('checkbox').classList.toggle('off'); });
+    $('chip-source').addEventListener('click', () => $('loader').classList.toggle('off'));
+    $('btn-load-code').addEventListener('click', () => this.loadCode($('model-code').value, 'pasted model (saved in this browser)', true));
+    $('model-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { $('model-code').value = txt; this.loadCode(txt, `file ${f.name} (saved in this browser)`, true); }); });
+    $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); });
+    $('btn-copy-check').addEventListener('click', () => this.copyText(this.check ? this.check.lines.join('\n') : '', null, null, 'check-msg', 'Report'));
+    $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
+    // which model runs: a saved pasted model wins; else model.js; else ask
+    let saved = null; try { saved = localStorage.getItem(STORE_CODE); } catch(e){}
+    if (saved){ $('model-code').value = saved; if (!this.loadCode(saved, 'pasted model (saved in this browser)', false)) this.useBuiltin(false); }
+    else this.useBuiltin(false);
+  },
+
+  useBuiltin(say){
+    if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.boot(MODELS, 'built-in model.js'); if (say) this.loadMsg('Using the built-in model.js.'); }
+    else { $('loader').classList.remove('off'); $('chip-source').textContent = 'model: none'; $('chip-check').textContent = 'self-check: —'; this.loadMsg('No model.js was found next to this page. Paste one above.'); }
+  },
+  loadMsg(s, bad){ const el = $('load-msg'); el.textContent = s; el.style.color = bad ? 'var(--warn)' : ''; },
+  loadCode(code, label, remember){
+    if (!code || !code.trim()){ this.loadMsg('Nothing to load: paste the model code first.', true); return false; }
+    let models;
+    try {
+      const fn = new Function(code + '\n;return (typeof MODELS !== "undefined") ? MODELS : null;');
+      models = fn();
+    } catch (e){ this.loadMsg(`The code did not run: ${e.message}. Paste this message back to your AI assistant.`, true); return false; }
+    if (!Array.isArray(models) || !models.length){ this.loadMsg('The code ran but did not define `const MODELS = [ ... ]` at the end.', true); return false; }
+    if (remember){ try { localStorage.setItem(STORE_CODE, code); } catch(e){} }
+    this.boot(models, label); this.loadMsg(`Loaded ${models.length} model${models.length === 1 ? '' : 's'}: ${models.map(m => m.name).join(', ')}.`);
+    return true;
+  },
+
+  boot(models, sourceLabel){
+    this.stopLoop(); this.stopPlay();
+    this.models = models;
+    $('chip-source').textContent = 'model: ' + sourceLabel;
+    const tabs = $('tabs'); tabs.innerHTML = ''; tabs.style.display = models.length > 1 ? '' : 'none';   // one model: the heading is enough
+    models.forEach((m, i) => {
+      const b = document.createElement('button'); b.className = 'tab-btn' + (i === 0 ? ' active' : ''); b.textContent = m.name || m.id; b.dataset.id = m.id;
+      b.addEventListener('click', () => this.switchModel(m.id)); tabs.appendChild(b);
+    });
+    this.selfCheck(false);
+    if (this.check.ok || this.check.failures === 0) this.switchModel(models[0].id);
+    else { $('checkbox').classList.remove('off'); $('charts').innerHTML = ''; $('title-el').textContent = 'Explorer'; $('about-body').innerHTML = ''; $('howto-body').innerHTML = ''; $('params').innerHTML = ''; }
+  },
+  selfCheck(show){
+    const chip = $('chip-check'); chip.textContent = 'self-check: running…';
+    let res;
+    try { res = runSelfCheck(this.models, { runs: 30 }); } catch (e){ res = { ok:false, failures:1, lines:['FAIL the self-check itself threw: ' + e.message] }; }
+    this.check = res;
+    chip.textContent = res.ok ? 'self-check: passed ✓' : `self-check: ${res.failures} failed ✗`;
+    chip.classList.toggle('bad', !res.ok);
+    $('check-text').innerHTML = res.lines.map(l => l.startsWith('FAIL') ? `<span class="fail">${l}</span>` : l).join('\n');
+    if (show || !res.ok) $('checkbox').classList.remove('off');
+    if (this.model) { for (const d of this.model.params) if (!(d.key in this.model.p)) this.model.p[d.key] = d.default; }
+  },
+
+  switchModel(id){
+    this.stopLoop(); this.stopPlay();
+    this.model = this.models.find(m => m.id === id);
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+    $('title-el').textContent = this.model.name; document.title = this.model.name;
+    this.model.p = {}; for (const d of this.model.params) this.model.p[d.key] = d.default;
+    this.buildLeft(); this.buildCharts(this.model.charts); this.buildSweepSelect();
+    const cmp = $('btn-compare'); if (this.model.compare){ cmp.classList.remove('off'); cmp.textContent = `Compare ${this.model.compare.labelOn || 'on'} vs ${this.model.compare.labelOff || 'off'}`; } else cmp.classList.add('off');
+    $('sweep-area').classList.remove('on');
+    this.reset(true);
+  },
+
+  // ---- left panel ----
+  buildLeft(){
+    const m = this.model;
+    $('about-body').innerHTML = m.about.map(p => `<p>${p}</p>`).join('');
+    const how = m.howToRead.map(p => `<p>${p}</p>`).concat(m.charts.map(c => `<p><b>${c.title}.</b> ${c.series.map(seriesWords).join(' · ')}.</p>`));
+    if (m.compare) how.push(`<p><b>Compare.</b> Runs a batch twice, with ${m.compare.key} = ${m.compare.on} (“${m.compare.labelOn || 'on'}”: lines as above) and ${m.compare.key} = ${m.compare.off} (“${m.compare.labelOff || 'off'}”: same colours, dashed lines with hollow markers), and draws both on each chart.</p>`);
+    $('howto-body').innerHTML = how.join('');
+    const box = $('params'); box.innerHTML = '';
+    for (const d of m.params){
+      const row = document.createElement('div'); row.className = 'param';
+      const lab = document.createElement('div'); lab.className = 'lab';
+      lab.innerHTML = `<span>${d.label}</span><span class="val" id="val-${d.key}"></span>`; row.appendChild(lab);
+      const show = v => { const el = $('val-' + d.key); if (el) el.textContent = d.fmt ? d.fmt(v) : String(v); };
+      if (d.type === 'seg'){
+        const seg = document.createElement('div'); seg.className = 'seg';
+        for (const v of d.values){
+          const b = document.createElement('button'); b.textContent = String(v); b.classList.toggle('active', v === m.p[d.key]); b.id = `p-${d.key}-${String(v).replace(/\W/g,'_')}`;
+          b.addEventListener('click', () => { seg.querySelectorAll('button').forEach(x => x.classList.remove('active')); b.classList.add('active'); m.p[d.key] = v; show(v); this.onParam(); });
+          seg.appendChild(b);
+        }
+        row.appendChild(seg);
+      } else if (d.type === 'range'){
+        const inp = document.createElement('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.value = m.p[d.key]; inp.id = 'p-' + d.key;
+        inp.addEventListener('input', () => { m.p[d.key] = parseFloat(inp.value); show(m.p[d.key]); });
+        inp.addEventListener('change', () => this.onParam());
+        row.appendChild(inp);
+      } else if (d.type === 'select'){
+        const sel = document.createElement('select'); sel.id = 'p-' + d.key;
+        for (const v of d.values){ const o = document.createElement('option'); o.value = String(v); o.textContent = String(v); o.selected = v === m.p[d.key]; sel.appendChild(o); }
+        sel.addEventListener('change', () => { const raw = sel.value; const v = d.values.find(x => String(x) === raw); m.p[d.key] = v; show(v); this.onParam(); });
+        row.appendChild(sel);
+      }
+      if (d.note){ const n = document.createElement('div'); n.className = 'note'; n.textContent = d.note; row.appendChild(n); }
+      box.appendChild(row); show(m.p[d.key]);
+    }
+  },
+  onParam(){ this.stopLoop(); this.reset(true); },
+
+  buildSweepSelect(){
+    const sel = $('sweep-param'); sel.innerHTML = '';
+    for (const d of this.model.params){
+      if (d.type === 'range' && !d.sweep) continue;      // ranges sweep only when the model lists d.sweep = [values]
+      const o = document.createElement('option'); o.value = d.key; o.textContent = d.label; sel.appendChild(o);
+    }
+  },
+
+  // ---- charts ----
+  mkDataset(s, T){
+    const c = colorOf(s.color);
+    return { label: s.label, data: Array(T).fill(null), borderColor: c, borderWidth: 1.6, borderDash: s.dash || [],
+      pointStyle: s.marker || 'circle', pointRadius: ctx => (ctx.dataIndex % Math.max(1, Math.round(T/12)) === 0) ? 3.5 : 0, pointHoverRadius: 4,
+      pointBackgroundColor: s.hollow ? tok('--card') : c, pointBorderColor: c, pointBorderWidth: 1.4, tension: 0, spanGaps: true, fill: false };
+  },
+  mkBand(s, T, upper){
+    const c = colorOf(s.color);
+    return { label: (upper ? '+1 sd ' : '−1 sd ') + s.label, data: Array(T).fill(null), borderColor: 'transparent', borderWidth: 0, pointRadius: 0,
+      fill: upper ? '+1' : false, backgroundColor: c + '22', tension: 0, spanGaps: true, band: true };
+  },
+  makeChart(canvas, spec, xMax, xLabel, categories){
+    const T = categories ? categories.length : xMax;
+    const datasets = [];
+    for (const s of spec.series){ datasets.push(this.mkBand(s, T, true), this.mkBand(s, T, false), this.mkDataset(s, T)); }
+    const fg = tok('--muted'), grid = tok('--rule');
+    return new Chart(canvas.getContext('2d'), { type: 'line',
+      data: { labels: categories || Array.from({length: T}, (_, i) => i + 1), datasets },
+      options: { animation: false, responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, color: fg, font: { family: tok('--mono'), size: 10 }, filter: it => !datasets[it.datasetIndex].band } },
+                   tooltip: { enabled: true, filter: it => !datasets[it.datasetIndex].band } },
+        scales: { x: { type: categories ? 'category' : 'linear', min: categories ? undefined : 1, max: categories ? undefined : xMax, title: { display: true, text: xLabel, color: fg, font: { size: 10 } }, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 8 } },
+                  y: { min: spec.yMin, max: spec.yMax, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 6 } } } } });
+  },
+  buildCharts(spec){
+    for (const k in this.charts) this.charts[k].destroy(); this.charts = {}; this.chartSpec = spec;
+    const box = $('charts'); box.innerHTML = '';
+    for (const c of spec){
+      const wrap = document.createElement('div'); wrap.className = 'chart';
+      wrap.innerHTML = `<div class="ttl">${c.title}</div><div class="cv"><canvas id="cv-${c.id}"></canvas></div><div class="how">${c.series.map(seriesWords).join(' · ')}</div>`;
+      box.appendChild(wrap);
+      this.charts[c.id] = this.makeChart($('cv-' + c.id), c, this.model.T, 'period');
+    }
+  },
+  clearCharts(){ for (const k in this.charts){ const ch = this.charts[k]; ch.data.datasets.forEach(d => { d.data = Array(d.data.length).fill(null); }); ch.update('none'); } },
+  pushRec(rec){
+    const t = rec.t - 1;
+    for (const c of this.chartSpec){ const ch = this.charts[c.id];
+      c.series.forEach((s, i) => { ch.data.datasets[3*i+2].data[t] = rec[s.key]; });
+      ch.update('none'); }
+  },
+  plotBatch(B, spec, keyOf){
+    spec = spec || this.chartSpec; keyOf = keyOf || (s => s.key);
+    for (const c of spec){ const ch = this.charts[c.id];
+      c.series.forEach((s, i) => { const k = keyOf(s); const Bx = B[k] ? B[k].B : B; const kk = B[k] ? B[k].key : k;
+        for (let t = 0; t < Bx.T; t++){ const m = Bx.mean[kk][t], sd = Bx.sd[kk][t];
+        ch.data.datasets[3*i+2].data[t] = m; ch.data.datasets[3*i].data[t] = (m != null && sd != null) ? m + sd : null; ch.data.datasets[3*i+1].data[t] = (m != null && sd != null) ? m - sd : null; } });
+      ch.update(); }
+  },
+
+  // ---- state strip ----
+  renderState(rec){
+    const el = $('state'); const m = this.model;
+    if (m.state && typeof m.state.render === 'function'){ m.state.render(el, rec, m); return; }
+    el.innerHTML = '';
+    if (!rec || !rec.bitShare){ el.innerHTML = `<div class="txt">${rec ? '' : 'press Play or Step'}</div>`; return; }
+    const sec = document.createElement('div');
+    sec.innerHTML = `<div class="ttl">${(m.state && m.state.title) || 'state'}</div>`;
+    const cells = document.createElement('div'); cells.className = 'cells';
+    Array.from(rec.bitShare).forEach((sh, i) => {
+      const c = document.createElement('div'); c.className = 'cell';
+      c.innerHTML = `<div class="idx">${i}</div><div class="v">${sh >= 0.5 ? 1 : 0}</div><div class="bar" style="height:${Math.round(sh*100)}%"></div>`;
+      c.title = `bit ${i}: share holding 1 = ${sh.toFixed(2)}`;
+      cells.appendChild(c);
+    });
+    sec.appendChild(cells); el.appendChild(sec);
+    const txt = document.createElement('div'); txt.className = 'txt';
+    txt.textContent = this.model.stateReadout ? this.model.stateReadout(rec) : ''; el.appendChild(txt);
+  },
+
+  // ---- run control ----
+  paramString(){ return this.model.params.map(d => d.key + '=' + (d.fmt ? d.fmt(this.model.p[d.key]) : this.model.p[d.key])).join(' '); },
+  pickSeed(){ const s = $('seed').value; return s === '' ? (Math.floor(Math.random() * 1e9) >>> 0) : (parseInt(s) >>> 0); },
+  reset(autoplay){
+    this.stopPlay(); this.mode = 'single'; this.t = -1; this.clearLog();
+    if (this.chartSpec !== this.model.charts) this.buildCharts(this.model.charts);
+    this.seedUsed = this.pickSeed();
+    this.rng = makeRng(this.seedUsed);
+    this.model.generateEnvironment(this.rng); this.model.initState(this.rng);
+    this.clearCharts(); this.renderState(null); this.counter(); this.readout('');
+    this.addLog(`seed ${this.seedUsed} · ${this.paramString()}`);
+    $('btn-csv').disabled = true; $('csvbox').classList.remove('on');
+    if (autoplay) this.startPlay();
+  },
+  step(){
+    if (this.t >= this.model.T - 1) return;
+    this.t++;
+    const rec = this.model.stepPeriod(this.rng);
+    this.pushRec(rec); this.renderState(rec); this.addLog(this.model.logLine(rec)); this.readout(this.model.stateReadout ? this.model.stateReadout(rec) : '');
+    this.counter();
+    if (this.t >= this.model.T - 1){ if (this.looping) this.reset(true); else this.stopPlay(); }
+  },
+  startPlay(){ if (this.playing) return; if (this.mode !== 'single') { this.reset(false); } this.playing = true; $('btn-play').textContent = 'Pause'; this.schedule(); },
+  stopPlay(){ this.playing = false; if (this.timer){ clearTimeout(this.timer); this.timer = null; } $('btn-play').textContent = 'Play'; },
+  togglePlay(){ if (this.playing) this.stopPlay(); else { if (this.t >= this.model.T - 1){ this.reset(true); return; } this.startPlay(); } },
+  startLoop(){ this.looping = true; const b = $('btn-loop'); b.textContent = 'Stop loop'; b.classList.add('primary'); this.reset(true); },
+  stopLoop(){ this.looping = false; const b = $('btn-loop'); b.textContent = 'Loop'; b.classList.remove('primary'); },
+  schedule(){ if (!this.playing) return; this.timer = setTimeout(() => { this.step(); if (this.playing) this.schedule(); }, this.interval); },
+  counter(){ $('counter').textContent = this.mode === 'single' ? `t = ${this.t < 0 ? 0 : this.t + 1} / ${this.model.T}` : this.mode; },
+  readout(s){ $('readout').textContent = s; },
+  clearLog(){ $('log').innerHTML = ''; },
+  addLog(line){ if (!line) return; const el = document.createElement('div'); el.className = 'line'; el.textContent = line; const box = $('log'); box.appendChild(el); box.scrollTop = box.scrollHeight; while (box.children.length > 300) box.removeChild(box.firstChild); },
+  runsWanted(){ return Math.max(2, parseInt($('batch-S').value) || 200); },
+
+  // ---- batch ----
+  batch(){
+    this.stopLoop(); this.stopPlay();
+    const S = this.runsWanted(); const seed = this.pickSeed();
+    $('counter').textContent = 'running…';
+    setTimeout(() => {
+      if (this.chartSpec !== this.model.charts) this.buildCharts(this.model.charts);
+      const t0 = performance.now(); const B = runBatch(this.model, S, seed); const ms = Math.round(performance.now() - t0);
+      this.mode = `mean of ${S} runs ± 1 sd`; this.lastBatch = B; this.lastSweep = null;
+      this.clearCharts(); this.plotBatch(B); this.renderState(null); this.counter(); this.readout('');
+      this.clearLog(); this.addLog(`batch: ${S} runs, base seed ${seed}, ${ms} ms · ${this.paramString()}`);
+      for (const k of B.keys) this.addLog(`${k}: final-period mean ${fmt(final(B,k))} (sd ${fmt(B.sd[k][B.T-1])})`);
+      this.csv = this.batchCsv(B); $('btn-csv').disabled = false;
+    }, 10);
+  },
+  batchCsv(B){
+    const rows = ['period,' + B.keys.flatMap(k => [k + '_mean', k + '_sd']).join(',')];
+    for (let t = 0; t < B.T; t++) rows.push([t+1].concat(B.keys.flatMap(k => [fmt(B.mean[k][t], 5), fmt(B.sd[k][t], 5)])).join(','));
+    return rows.join('\n');
+  },
+
+  // ---- compare: the same batch with the compare parameter on and off, overlaid ----
+  compare(){
+    const cmp = this.model.compare; if (!cmp) return;
+    this.stopLoop(); this.stopPlay();
+    const S = this.runsWanted(); const seed = this.pickSeed(); const key = cmp.key; const saved = this.model.p[key];
+    const onL = cmp.labelOn || 'on', offL = cmp.labelOff || 'off';
+    $('counter').textContent = 'comparing…';
+    setTimeout(() => {
+      const t0 = performance.now();
+      this.model.p[key] = cmp.on;  const Bon  = runBatch(this.model, S, seed);
+      this.model.p[key] = cmp.off; const Boff = runBatch(this.model, S, seed);
+      this.model.p[key] = saved;
+      const ms = Math.round(performance.now() - t0);
+      // derived chart spec: each series twice; "off" is dashed (dotted if the original is dashed) with hollow markers
+      const spec = this.model.charts.map(c => ({ id: c.id, title: c.title, yMin: c.yMin, yMax: c.yMax, series: c.series.flatMap(s => [
+        Object.assign({}, s, { key: s.key + '__on',  label: `${s.label} (${onL})` }),
+        Object.assign({}, s, { key: s.key + '__off', label: `${s.label} (${offL})`, dash: (s.dash && s.dash.length) ? [2,3] : [6,3], hollow: true }),
+      ]) }));
+      this.buildCharts(spec);
+      const lookup = {}; for (const k of Bon.keys){ lookup[k + '__on'] = { B: Bon, key: k }; lookup[k + '__off'] = { B: Boff, key: k }; }
+      this.plotBatch(lookup, spec, s => s.key);
+      this.mode = `${onL} vs ${offL} · mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null;
+      this.renderState(null); this.counter(); this.readout('');
+      this.clearLog(); this.addLog(`compare ${key}=${cmp.on} (${onL}) vs ${key}=${cmp.off} (${offL}): ${S} runs each, base seed ${seed}, ${ms} ms · other parameters ${this.paramString()}`);
+      for (const k of Bon.keys) this.addLog(`${k}: final-period mean ${fmt(final(Bon,k))} ${onL} vs ${fmt(final(Boff,k))} ${offL} (difference ${fmt(final(Bon,k) - final(Boff,k))})`);
+      const rows = ['period,' + Bon.keys.flatMap(k => [`${k}_${onL}_mean`, `${k}_${onL}_sd`, `${k}_${offL}_mean`, `${k}_${offL}_sd`]).join(',')];
+      for (let t = 0; t < Bon.T; t++) rows.push([t+1].concat(Bon.keys.flatMap(k => [fmt(Bon.mean[k][t],5), fmt(Bon.sd[k][t],5), fmt(Boff.mean[k][t],5), fmt(Boff.sd[k][t],5)])).join(','));
+      this.csv = rows.join('\n'); $('btn-csv').disabled = false;
+    }, 10);
+  },
+
+  // ---- sweep: vary one parameter over its listed values, S runs each, final-period mean ± sd ----
+  sweep(){
+    this.stopLoop(); this.stopPlay();
+    const key = $('sweep-param').value; const d = this.model.params.find(x => x.key === key); if (!d) return;
+    const values = d.sweep || d.values; const S = this.runsWanted(); const seed = this.pickSeed();
+    const saved = this.model.p[key];
+    $('counter').textContent = 'sweeping…';
+    setTimeout(() => {
+      const t0 = performance.now(); const res = [];
+      for (const v of values){ this.model.p[key] = v; res.push({ v, B: runBatch(this.model, S, seed) }); }
+      this.model.p[key] = saved;
+      const ms = Math.round(performance.now() - t0);
+      this.lastSweep = { key, values, S, res }; this.mode = `sweep over ${d.label}`; this.counter();
+      const area = $('sweep-area'); area.classList.add('on');
+      $('sweep-title').textContent = `Sweep: final-period outcome vs ${d.label} (${S} runs per value, mean ± 1 sd; other parameters as set)`;
+      for (const k in this.sweepCharts) this.sweepCharts[k].destroy(); this.sweepCharts = {};
+      const box = $('sweep-charts'); box.innerHTML = '';
+      for (const c of this.model.charts){
+        const wrap = document.createElement('div'); wrap.className = 'chart';
+        wrap.innerHTML = `<div class="ttl">${c.title}</div><div class="cv"><canvas id="sw-${c.id}"></canvas></div><div class="how">${c.series.map(seriesWords).join(' · ')}</div>`;
+        box.appendChild(wrap);
+        const ch = this.makeChart($('sw-' + c.id), c, values.length, d.label, values.map(v => d.fmt ? d.fmt(v) : String(v)));
+        ch.data.datasets.forEach(ds => { if (!ds.band) ds.pointRadius = 4; });
+        c.series.forEach((s, i) => { res.forEach((r, j) => { const m = final(r.B, s.key), sd = r.B.sd[s.key][r.B.T-1];
+          ch.data.datasets[3*i+2].data[j] = m; ch.data.datasets[3*i].data[j] = m != null ? m + sd : null; ch.data.datasets[3*i+1].data[j] = m != null ? m - sd : null; }); });
+        ch.update(); this.sweepCharts[c.id] = ch;
+      }
+      this.clearLog(); this.addLog(`sweep ${key} over [${values.join(', ')}], ${S} runs each, base seed ${seed}, ${ms} ms`);
+      const keys = this.model.charts.flatMap(c => c.series.map(s => s.key));
+      for (const r of res) this.addLog(`${key}=${r.v}: ` + keys.map(k => `${k} ${fmt(final(r.B,k))}`).join(' · '));
+      const rows = [key + ',' + keys.flatMap(k => [k + '_mean', k + '_sd']).join(',')];
+      for (const r of res) rows.push([r.v].concat(keys.flatMap(k => [fmt(final(r.B,k), 5), fmt(r.B.sd[k][r.B.T-1], 5)])).join(','));
+      this.csv = rows.join('\n'); $('btn-csv').disabled = false;
+      area.scrollIntoView({ block: 'nearest' });
+    }, 10);
+  },
+
+  copyText(text, boxId, taId, msgId, what){
+    const msg = $(msgId);
+    if (boxId){ const ta = $(taId); ta.value = text; $(boxId).classList.add('on'); }
+    const done = ok => { msg.textContent = ok ? `${what} copied to clipboard.` + (boxId ? ' It is also shown below.' : '') : `Clipboard unavailable here. Select the text and copy it.`; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); else done(false);
+  },
+};
+
+window.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
