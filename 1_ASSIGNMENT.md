@@ -50,7 +50,7 @@ Once your explorer runs, work with it, then write up what you found.
 
 8. **Refine the model.** Watch single runs with Step and compare with and without the AI. Where the agents do something you did not intend, or a chart does not show what you need, say so to the same AI assistant in the same chat ("when an agent ties, it should stay, not switch"; "plot the share of agents following the AI instead of trust"; "add a setting for how noisy the AI is") and replace `model.js` with the new version it gives you. Everything about your model can be changed this way: the agents' rules, the settings on the left, which quantities are charted and how they are labelled, the strip and the log. The page itself (its layout, its buttons, and the fact that every chart is a line over periods) stays the same for everyone. Keep a short list of what you changed and why.
 
-9. **What did you learn?** What did this exercise teach you about modelling organizational learning, and about where your intuition in question 7 was right or wrong? What paper might you write on the role of AI in organizational learning: what would be its question, its mechanism, and the result you would need to show?
+9. **What did you learn?** What did this exercise teach you about modelling organizational learning, and about where your intuition in question 7 was right or wrong? What paper might you write on the role of AI in organizational learning: what would be your research question, expected contribution, anticipated results and mechanisms?
 
 ## Example
 
