@@ -14,7 +14,7 @@ Accordingly, all computational simulations follow a fairly standard format, as d
 
    *Be specific where you can:* how many agents, and how many of each type; how many options or choices there are (for a landscape, the number of choices N and how strongly they interact, K; for a bandit, the number of arms); whether the task changes during a run. Anything you leave out, the assistant will set to a usual value and tell you what it chose.
 
-2. **Define their representation of the task:** What can agents see of the overall task, that impacts how they solve it? Do they explore around a baseline solution that their manager gives them (e.g. March 1991)? Do they explore relative to what their neighbors in their department of the organization know (e.g. Fang et al. 2010)? Do they only see a portion of all the possible actions the firm can do (e.g. Rivkin & Siggelkow, 2003)? Are the payoffs the same for everyone (e.g. Levinthal & Workiewicz, 2018)? 
+2. **Define their representation of the task:** What can agents see of the overall task, that impacts how they solve it? Do they explore around a baseline solution that their manager gives them (e.g. March 1991)? Do they explore relative to what their neighbors in their department of the organization know (e.g. Fang et al. 2010)? Do they only see a portion of all the possible actions the firm can do (e.g. Rivkin & Siggelkow, 2003)? 
 
    *Be specific where you can:* how many alternatives an agent can consider in one period (one, a few nearby, all); whether it sees the true value of an alternative or its own estimate, and if an estimate, where that starts; who sees whom, if agents see each other at all.
 
@@ -22,7 +22,7 @@ Accordingly, all computational simulations follow a fairly standard format, as d
 
    *Be specific where you can:* the rule, as a sentence (take the best thing seen; try something at random one time in ten; switch only if strictly better); what a tie does; how often, roughly, agents explore rather than exploit.
 
-4. **Define the feedback that agents receive:** When agents take an action, what is the feedback they receive about what this action resulted in? Do they see the direct consequence of their choices, such as the full value of the idea they proposed (e.g. Levinthal 1997)? Is this feedback mediated through a manager, such as their choice being elevated by a manger or not (e.g. March 1991)? Is the feedback obfuscated by the choices others are simultaneously making in the organization (e.g. Rivkin & Siggelkow, 2003)?
+4. **Define the feedback that agents receive:** When agents take an action, what is the feedback they receive about what this action resulted in? Do they see the direct consequence of their choices, such as the full value of the idea they proposed (e.g. Levinthal 1997)? Is this feedback mediated through a manager, such as their choice being elevated by a manger or not (e.g. March 1991)? Is the feedback obfuscated by the choices others are simultaneously making in the organization (e.g. Rivkin & Siggelkow, 2003)? Are the payoffs the same for everyone (e.g. Levinthal & Workiewicz, 2018)? 
 
    *Be specific where you can:* what exactly is observed (the true value, a noisy version, only success or failure, only whether someone approved); how noisy; whether agents also see others' results.
 
