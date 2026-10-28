@@ -570,7 +570,8 @@ const App = {
     return new Chart(canvas.getContext('2d'), { type: 'line',
       data: { labels: categories || Array.from({length: T}, (_, i) => i + 1), datasets },
       options: { animation: false, responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, color: fg, font: { family: tok('--mono'), size: 10 }, filter: it => !datasets[it.datasetIndex].band } },
+        plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, color: fg, font: { family: tok('--mono'), size: 10 }, filter: it => !datasets[it.datasetIndex].band,
+                     generateLabels: ch => Chart.defaults.plugins.legend.labels.generateLabels(ch).map(l => { const t = l.text || ''; return Object.assign(l, { text: t.length > 34 ? t.slice(0, 33) + '…' : t }); }) } },
                    tooltip: { enabled: true, filter: it => !datasets[it.datasetIndex].band } },
         scales: { x: { type: categories ? 'category' : 'linear', min: categories ? undefined : 1, max: categories ? undefined : xMax, title: { display: true, text: xLabel, color: fg, font: { size: 10 } }, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 8 } },
                   y: { min: spec.yMin, max: spec.yMax, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 6 } } } } });
