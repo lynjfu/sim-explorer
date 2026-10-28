@@ -40,7 +40,7 @@ Provide about 3-5 sentence answers for each of the above questions, specifically
 
 7. **What you expect:** What do you think will happen with the AI compared with without it, and why? This does not shape the code; it tells you what to look for when you run it, and it is what you will compare against what you actually see.
 
-Then copy everything in `2_PROMPT.md` into your AI assistant (Claude, ChatGPT, Gemini or another), paste your answers underneath, save the `model.js` it writes into your downloaded copy of this folder, and open `index.html` (the steps are in `README.md`). The "with" and "without" simulations are one model with the AI switched on or off; the page's Compare button overlays the two.
+Then copy everything in `2_PROMPT.md` into your AI assistant (Claude, ChatGPT, Gemini or another), paste your answers to questions 1 to 5 underneath, save the `model.js` it writes into your downloaded copy of this folder, and open `index.html` (the steps are in `README.md`). The "with" and "without" simulations are one model with the AI switched on or off; the page's Compare button overlays the two.
 
 You do not need to say what to measure. Every explorer shows the same two things over time: the performance of the system (how well the agents are doing at the task, averaged over agents), and, where it applies, the heterogeneity of the agents (how different they are from one another). The assistant may add one chart about the AI itself (how many follow it, how accurate it is).
 

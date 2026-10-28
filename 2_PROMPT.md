@@ -103,7 +103,7 @@ Give the student, in this order:
 2. How to run it: save the code as `model.js` inside their downloaded copy of the sim-explorer folder, replacing the file of that name, and open `index.html` in a browser. (If they have no folder: open the explorer page their instructor linked, press "Load model", paste the code, press "Load pasted code".) The page runs a self-check; if the chip at the top says "self-check: passed", the model is running. If it says "failed", they should open the report and paste it back to you with the words "please fix this".
 3. The assumption list: every `ASSUMED` slot, in plain words, with the citation after it if there is one.
 4. The `// CHOICE:` list: every place you decided something small, and the alternative.
-5. What to look at first: two or three concrete things to try in the page (which parameter to change, what Compare should show) that test the student's own expectation from question 7 of the assignment.
+5. What to look at first: two or three concrete things to try in the page (which parameter to change, what Compare should show) that would show whether the AI makes a difference, and how (where the system ends up, or only how fast it gets there). The student's own expectation is not part of what they send you.
 
 Keep it short. Do not describe the page; the student can see it.
 
