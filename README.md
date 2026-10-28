@@ -9,7 +9,7 @@ This repository turns a simulation you have described in words into a model you 
 1. **Answer the questions in `1_ASSIGNMENT.md`**, three to five sentences each. Be specific about numbers where you can (how many agents, how many choices); where you are not, say "you choose" and the assistant will pick a usual value and tell you.
 2. **Open `2_PROMPT.md`, copy everything in it**, paste it into a new chat with your assistant, then paste your answers underneath. (If your assistant takes attachments, you can attach the files in `docs/` and `model.js` instead and write "follow LLM_INSTRUCTIONS.md" with your answers.)
 3. **Answer its questions.** It will ask about anything you left unclear, in plain words, at most six questions, then show you a short table of what it understood. Correct anything wrong. Then it writes `model.js`.
-4. **Run it.** Open the explorer page at **https://lynjfu.github.io/sim-explorer/** (or `index.html` from this folder). Press **Load model** at the top right, paste the code, press **Load pasted code**. The page checks the code and says "self-check: passed" if it runs correctly. If it says "failed", click it, copy the report, and paste it back to the assistant with "please fix this".
+4. **Run it.** Open the explorer page at **https://carolynjfu.com/sim-explorer/** (or `index.html` from this folder). Press **Load model** at the top right, paste the code, press **Load pasted code**. The page checks the code and says "self-check: passed" if it runs correctly. If it says "failed", click it, copy the report, and paste it back to the assistant with "please fix this".
 5. **Explore.** Change parameters and watch. Press **Compare** to see with and without the AI. Compare what you expected (the last question of the assignment) with what you see.
 
 The page keeps your pasted model in your browser, so you can close it and come back. "Use built-in model" clears it. Nothing you paste leaves your computer.
@@ -35,7 +35,7 @@ Your model's parameters on the left. On the right: Step through one run a round 
 
 ## For instructors
 
-- **Hosting.** The page is served from GitHub Pages at the link above. A fork works the same way: switch on Pages for the fork and the link becomes `https://<user>.github.io/sim-explorer/`.
+- **Hosting.** The page is served from GitHub Pages at the link above. A fork works the same way: switch on Pages for the fork and the link becomes `https://<user>.github.io/sim-explorer/` (or the fork owner's custom domain).
 - **Reading a student's model.** Open the page, Load model, paste their `model.js`. Their `about` text, assumption list and checks are in the file. The self-check tells you at once whether it runs, whether a seed reproduces, and whether their own sanity checks pass.
 - **Rebuilding the prompt.** `scripts/build_prompt.sh` writes `2_PROMPT.md` from `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` and `model.js`. Run it after editing any of them.
 - **Checking a model headlessly.** `scripts/smoke_test.sh path/to/model.js` runs the page's self-check from the command line (needs `node`, or the `jsc` that ships with macOS).
