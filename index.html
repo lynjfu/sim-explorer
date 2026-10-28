@@ -351,8 +351,10 @@ function runSelfCheck(models, opts){
     try { a = one(42); b = one(42); } catch (e){ fail(`${tag}: a run at the default parameters threw: ${e.message}`); continue; }
     if (!a || typeof a !== 'object') { fail(`${tag}: stepPeriod must return a record object`); continue; }
     for (const k of keys){
-      if (typeof a[k] !== 'number' || Number.isNaN(a[k])) fail(`${tag}: series key '${k}' is not a number in the record returned by stepPeriod`);
-      else if (a[k] !== b[k]) fail(`${tag}: seed 42 did not reproduce '${k}' (${a[k]} vs ${b[k]}); randomness must come only from the rng argument`);
+      const va = a[k];
+      if (!(va === null || (typeof va === 'number' && !Number.isNaN(va)))) fail(`${tag}: series key '${k}' is not a number (or null) in the record returned by stepPeriod`);
+      else if (va !== b[k]) fail(`${tag}: seed 42 did not reproduce '${k}' (${va} vs ${b[k]}); randomness must come only from the rng argument`);
+      else if (va === null) note(`${tag}: series '${k}' is null at the end of a run at the defaults, so that line plots nothing until a parameter gives it a value`);
     }
     if (a.bitShare && !(Array.isArray(a.bitShare) || ArrayBuffer.isView(a.bitShare))) fail(`${tag}: bitShare must be an array of per-bit shares in [0,1]`);
     try { const l = m.logLine(a); if (typeof l !== 'string') fail(`${tag}: logLine must return a string`); } catch (e){ fail(`${tag}: logLine threw: ${e.message}`); }
