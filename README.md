@@ -17,7 +17,7 @@ Your model lives in your folder as `model.js`. Keep that file; it is what you ha
 
 ### Without a download
 
-The example model runs at **https://carolynjfu.com/sim-explorer/**. That page can also run yours: press **Load model**, paste the code, press **Load pasted code**. It keeps the pasted model in your browser only, so the folder is the safer home for it.
+The example model runs at **https://carolynjfu.com/sim-explorer/**. That page can also run yours: press the **Load model** button in the top-right corner, paste the code into the box that opens, and press **Load pasted code** under it. It keeps the pasted model in your browser only, so the folder is the safer home for it.
 
 ## What the page shows
 
@@ -41,7 +41,7 @@ Your model's parameters on the left. On the right: Step through one run a round 
 ## For instructors
 
 - **Hosting.** The example is served from GitHub Pages at the link above; students work from a downloaded copy so each sees their own model. A fork works the same way: switch on Pages for the fork and the link becomes `https://<user>.github.io/sim-explorer/` (or the fork owner's custom domain).
-- **Reading a student's model.** Open the page, Load model, paste their `model.js`. Their `about` text, assumption list and checks are in the file. The self-check tells you at once whether it runs, whether a seed reproduces, and whether their own sanity checks pass.
+- **Reading a student's model.** Open the page, press **Load model** (top right), paste their `model.js`, press **Load pasted code**. Their `about` text, assumption list and checks are in the file. The self-check tells you at once whether it runs, whether a seed reproduces, and whether their own sanity checks pass.
 - **Rebuilding the prompt.** `scripts/build_prompt.sh` writes `2_PROMPT.md` from `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` and `model.js`. Run it after editing any of them.
 - **Checking a model headlessly.** `scripts/smoke_test.sh path/to/model.js` runs the page's self-check from the command line (needs `node`, or the `jsc` that ships with macOS).
 - **One-file copy.** `scripts/inline_model.sh [model.js] out.html` puts the model inside the page, for emailing or publishing as a single file.
