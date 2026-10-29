@@ -54,7 +54,7 @@ Once your explorer runs, work with it, then write up what you found.
 
 ## Example
 
-Two worked examples are in `examples/`: `ai-advisor` (people searching for a good project with an AI advisor; the model the explorer page shows by default) and `analysts-ai` (analysts choosing among five approaches with an AI that pools everyone's results). Each has the written answers, the `model.js` that came out, and the assistant's reply.
+A worked example is in `examples/ai-advisor/`: people searching for a good project with an AI advisor, the model the explorer page shows by default. It has the written answers, the `model.js` that came out, and the assumption list that came with it.
 
 ## References
 

@@ -32,10 +32,7 @@ Your model's parameters on the left. On the right: Step through one run a round 
 | `index.html` | The explorer page. Never edited. |
 | `model.js` | The built-in example model (people searching for a good project with an AI advisor). Yours replaces it. |
 | `examples/ai-advisor/` | That example end to end: the written answers, the `model.js`, and the assumption list that came with it. |
-| `examples/analysts-ai/` | A second example (analysts choosing among five approaches, an AI pooling everyone's results), produced from the prompt alone: the answers, the assistant's full reply, and its `model.js`. |
 | `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` | What the assistant does and what `model.js` must contain. For the assistant; you do not need to read them. |
-| `docs/LAYOUT.md`, `docs/FIGURES.md` | How the page works and its chart rules. |
-| `docs/researcher-*.md` | A more detailed form and question bank for researchers with existing code. |
 | `scripts/` | For instructors and maintainers, below. |
 
 ## For instructors

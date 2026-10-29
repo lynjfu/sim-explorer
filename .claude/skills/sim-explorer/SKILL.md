@@ -31,6 +31,4 @@ Change only `model.js`, and only what the user changed. For a second version sid
 | `$REPO/docs/LLM_INSTRUCTIONS.md` | Always: intake, questions, card, build rules, delivery |
 | `$REPO/docs/MODEL_CONTRACT.md` | Writing `model.js` |
 | `$REPO/model.js`, `$REPO/examples/ai-advisor/` | The worked example: answers, model, assumption list |
-| `$REPO/docs/LAYOUT.md`, `$REPO/docs/FIGURES.md` | What the page does; chart and accessibility rules |
-| `$REPO/docs/researcher-spec-template.md`, `$REPO/docs/researcher-intake.md` | A researcher with existing code wants the more detailed form and question bank |
 | `$REPO/scripts/` | smoke_test, inline_model, build_prompt, install_skill |
