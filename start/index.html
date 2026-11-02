@@ -103,7 +103,7 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
     <nav aria-label="progress">
       <ol class="steps" id="steps">
         <li data-step="1"><button type="button" data-go="1"><span class="dot">1</span><span class="lbl">Describe your model</span></button></li>
-        <li data-step="2"><button type="button" data-go="2"><span class="dot">2</span><span class="lbl">Get your files and build it</span></button></li>
+        <li data-step="2"><button type="button" data-go="2"><span class="dot">2</span><span class="lbl">Build it and run it online</span></button></li>
         <li data-step="3"><button type="button" data-go="3"><span class="dot">3</span><span class="lbl">See an example</span></button></li>
       </ol>
     </nav>
@@ -167,7 +167,7 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
   <div class="warnbox" id="warn1" role="status"></div>
   <div class="nav">
     <button type="button" class="btn" id="btn-clear">Clear all answers</button>
-    <button type="button" class="btn primary" id="btn-next1">Next: get your files →</button>
+    <button type="button" class="btn primary" id="btn-next1">Next: build it →</button>
   </div>
 
   <details class="refs" style="margin-top:28px">
@@ -190,8 +190,8 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
 
 <!-- ============================ STEP 2 ============================ -->
 <section class="page" id="page2" aria-labelledby="h2">
-  <h2 id="h2">Get your files and build it</h2>
-  <p class="lead">Two downloads, then a short conversation with an AI assistant. The assistant writes one file, <code>model.js</code>, and the explorer page runs it.</p>
+  <h2 id="h2">Build it and run it online</h2>
+  <p class="lead">One download, a short conversation with an AI assistant, then you paste what it writes into the explorer. Nothing to install and no folder to set up: it all happens in your web browser.</p>
 
   <div class="card">
     <h3>1. Download your prompt</h3>
@@ -206,41 +206,35 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
   </div>
 
   <div class="card">
-    <h3>2. Download the explorer folder</h3>
-    <p>The page that will run your model. Unzip it; you get a folder called <code>sim-explorer-main</code>. Your <code>model.js</code> will go into it.</p>
-    <div class="row">
-      <a class="btn primary" id="btn-dl-folder" href="https://github.com/lynjfu/sim-explorer/archive/refs/heads/main.zip" download>Download the explorer folder (zip)</a>
-      <span class="msg">No installation: it opens in any web browser.</span>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>3. Talk to your AI assistant</h3>
+    <h3>2. Talk to your AI assistant</h3>
     <ol class="do">
       <li>Open a new chat in an AI assistant (Claude, ChatGPT, Gemini or another). <b>Upload <code>my_prompt.md</code></b> as an attachment, or paste its whole text, and send it. Your answers are already at the end, so add nothing else.</li>
       <li>The assistant may ask up to six short questions about things your answers left open. Answer in plain words. “You choose” is a fine answer; it will tell you what it chose.</li>
       <li>It then shows a short summary of your model, as a table. <b>Check it against what you meant</b> and correct anything that is wrong. This is the step that decides whether the simulation is your model.</li>
-      <li>It writes the complete <code>model.js</code>. Save it <b>into the <code>sim-explorer-main</code> folder</b>, replacing the <code>model.js</code> that is already there. If the assistant shows the code instead of a file, copy all of it into a plain-text file named exactly <code>model.js</code>.</li>
+      <li>It writes the complete model as one block of code, <code>model.js</code>. <b>Copy all of it.</b></li>
     </ol>
   </div>
 
   <div class="card">
-    <h3>4. Run it</h3>
+    <h3>3. Run it in the explorer</h3>
     <ol class="do">
-      <li>Open <code>index.html</code> in the <code>sim-explorer-main</code> folder in your web browser.</li>
-      <li>Look at the top-right corner. <span class="kbd">self-check: passed ✓</span> means your model is running. If it says <span class="kbd">failed ✗</span>, click it, press “Copy report”, paste the report back to the assistant with the words “please fix this”, and replace <code>model.js</code> with the new version.</li>
-      <li>No folder, or the file will not save? Open the <a href="https://carolynjfu.com/sim-explorer/" target="_blank" rel="noopener">online explorer</a>, press <b>Load model</b> in the top-right corner, paste the code into the box that opens, and press <b>Load pasted code</b> under it. The online page keeps a pasted model in your browser only.</li>
+      <li>Open the <a href="https://carolynjfu.com/sim-explorer/" target="_blank" rel="noopener">online explorer</a>. It starts with the built-in example.</li>
+      <li>Press <b>Load model</b> in the top-right corner, paste the code into the box that opens, and press <b>Load pasted code</b> under it. If the assistant gave you a file instead, press <b>Choose model.js file</b>.</li>
+      <li>Look at the top-right corner. <span class="kbd">self-check: passed ✓</span> means your model is running. If it says <span class="kbd">failed ✗</span>, click it, press “Copy report”, paste the report back to the assistant with the words “please fix this”, and load the new version the same way.</li>
     </ol>
+    <p class="small" style="margin:10px 0 0">Your model runs only in your browser; nobody else sees it, and the page shows everyone else the example. Your browser remembers your model until you press “Use built-in model” or clear its data.</p>
   </div>
 
   <div class="card">
-    <h3>5. Refine it, then save your results</h3>
+    <h3>4. Refine it, then save your results</h3>
     <ol class="do">
       <li>Press <b>Step</b> to watch one run a period at a time, and <b>Batch</b> to average many runs. If your model has an AI agent, <b>Compare</b> overlays the runs with and without it.</li>
-      <li>Where the agents do something you did not intend, tell the assistant in the same chat (“when an agent ties, it should stay, not switch”; “add a setting for how noisy the AI is”) and replace <code>model.js</code> with the new version. The agents' rules, the settings, the charted quantities, the strip and the log can all change this way. The page itself stays the same for everyone. Keep a short list of what you changed and why.</li>
-      <li>When you have a version you want to keep, press <b>Download zip</b> in the top-right corner of the explorer. Choose how many runs to include. The zip holds your model code, the page, every run's numbers, the averages, the charts as images and the settings needed to reproduce them.</li>
+      <li>Where the agents do something you did not intend, tell the assistant in the same chat (“when an agent ties, it should stay, not switch”; “add a setting for how noisy the AI is”) and load the new version. The agents' rules, the settings, the charted quantities, the strip and the log can all change this way. The page itself stays the same for everyone. Keep a short list of what you changed and why.</li>
+      <li>When you have a version you want to keep, press <b>Download zip</b> in the top-right corner of the explorer and choose how many runs to include. The zip holds your model code, every run's numbers, the averages, the charts as images and the settings needed to reproduce them. Its <code>index.html</code> is the explorer with your model inside: open it any time, on any computer, to run your model again.</li>
     </ol>
   </div>
+
+  <p class="small">Prefer to work offline, or want everything behind the page? The full repository is at <a href="https://github.com/lynjfu/sim-explorer" target="_blank" rel="noopener">github.com/lynjfu/sim-explorer</a>; its README explains how to run your model from a downloaded folder.</p>
 
   <div class="nav">
     <button type="button" class="btn" data-go="1">← Back to your answers</button>
@@ -261,7 +255,7 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
     <a class="btn" href="https://github.com/lynjfu/sim-explorer/tree/main/examples/ai-advisor" target="_blank" rel="noopener">Read the example's answers and code</a>
   </div>
   <div class="nav">
-    <button type="button" class="btn" data-go="2">← Back to your files</button>
+    <button type="button" class="btn" data-go="2">← Back to building it</button>
     <span class="small">Your answers stay saved in this browser.</span>
   </div>
 </section>
@@ -335,6 +329,7 @@ function answersMarkdown(a, forAssistant){
   L.push(a.hasai
     ? 'This model includes an AI agent. Each question is answered for the human agents and for the AI agent(s).'
     : 'This model has no AI agent. Do not add one, and leave `compare` out of the model.', '');
+  if (forAssistant) L.push('I will run the model in the online explorer: when you deliver, tell me to paste the code into "Load model" (top-right corner of the page), not to save it into a folder.', '');
   STAGES.forEach((st, i) => {
     L.push(`## ${i+1}. ${st.short}`, '');
     const h = a[st.key].trim(), ai = a[st.key + '-ai'].trim();

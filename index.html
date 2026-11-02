@@ -518,14 +518,15 @@ const App = {
     $('chip-dl').addEventListener('click', () => { const b = $('dlbox'); b.classList.toggle('off'); if (!b.classList.contains('off')) this.prepareDownload(); });
     $('btn-dl').addEventListener('click', () => this.download());
     $('dl-code-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { this.codeText = txt; $('dl-code-msg').textContent = `${f.name} will be included.`; }); });
-    // which model runs: a saved pasted model wins; else model.js; else ask
-    let saved = null; try { saved = localStorage.getItem(STORE_CODE); } catch(e){}
+    // which model runs: a model written into this page (a downloaded explorer) wins; else a saved pasted model; else model.js; else ask
+    const inlineModel = this.inlineModel = Array.from(document.scripts).some(sc => !sc.src && !sc.id && /const\s+MODELS\s*=/.test(sc.textContent));
+    let saved = null; if (!inlineModel){ try { saved = localStorage.getItem(STORE_CODE); } catch(e){} }
     if (saved){ $('model-code').value = saved; if (!this.loadCode(saved, 'pasted model (saved in this browser)', false)) this.useBuiltin(false); }
     else this.useBuiltin(false);
   },
 
   useBuiltin(say){
-    if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.codeText = null; this.boot(MODELS, 'built-in model.js'); if (say) this.loadMsg('Using the built-in model.js.'); }
+    if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.codeText = null; this.boot(MODELS, this.inlineModel ? 'model inside this page' : 'built-in model.js'); if (say) this.loadMsg('Using the built-in model.js.'); }
     else { $('loader').classList.remove('off'); $('chip-source').textContent = 'model: none'; $('chip-check').textContent = 'self-check: —'; this.loadMsg('No model.js was found next to this page. Paste one above.'); }
   },
   loadMsg(s, bad){ const el = $('load-msg'); el.textContent = s; el.style.color = bad ? 'var(--warn)' : ''; },
@@ -891,7 +892,8 @@ const App = {
       `Parameters: ${this.paramString()}`, '',
       'Files',
       code ? '  model.js       the model code that produced these results' : '  (model.js is not included: the browser could not read it. It is the model.js in your folder.)',
-      '  index.html     the explorer page. With model.js next to it, open index.html to run the model again (the charts need an internet connection).',
+      code ? '  index.html     the explorer with this model inside. Open it in a browser, on any computer, to run the model again (the charts need an internet connection).'
+           : '  index.html     the explorer page. Put model.js next to it and open index.html to run the model again (the charts need an internet connection).',
       `  runs.csv       one row per run per period${cmp ? ' per setting' : ''} (${S * T * conds.length} rows). Columns: ${cmp ? 'condition, ' : ''}run, seed, period, then every number the model records each period.`,
       `  summary.csv    mean and standard deviation across runs, per period${cmp ? ' and setting' : ''}. The same numbers as ${cmp ? 'Compare' : 'Batch'} on the page with this seed and number of runs.`,
       '  final.csv      each run\'s values in the last period.',
@@ -904,7 +906,9 @@ const App = {
     ].join('\n');
     add('README.txt', readme);
     if (code) add('model.js', code);
-    add('index.html', PAGE_SOURCE);
+    // the page with this model inside, so index.html runs on its own, anywhere
+    const tag = '<script src="model.js"><' + '/script>';   // split so the browser does not read it as the end of this script
+    add('index.html', (code && PAGE_SOURCE.includes(tag)) ? PAGE_SOURCE.replace(tag, () => '<script>\n' + code.replace(/<\/script/gi, '<\\/script') + '\n<' + '/script>') : PAGE_SOURCE);
     add('runs.csv', runs.join('\n') + '\n'); add('summary.csv', summ.join('\n') + '\n'); add('final.csv', fin.join('\n') + '\n');
     add('settings.json', JSON.stringify(settings, null, 2) + '\n');
     add('notes.txt', ($('notes').value || '') + '\n');

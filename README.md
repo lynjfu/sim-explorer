@@ -4,7 +4,7 @@
 
 This repository turns a simulation you have described in words into a model you can watch run, change and compare, in your browser, using whichever AI assistant you already use (Claude, ChatGPT, Gemini or another). You answer the questions in plain language; the assistant writes one small file; a fixed web page runs it, checks it and shows it. The page is the same for everyone. The model inside it is yours.
 
-**Or use the guided version:** https://carolynjfu.com/sim-explorer/start/ asks the same questions on one page (with an AI agent as a suggestion, not a requirement), hands you one prompt file with your answers already in it, and walks you through the rest. It produces the same `model.js` for the same page.
+**Or use the guided version:** https://carolynjfu.com/sim-explorer/start/ asks the same questions on one page (with an AI agent as a suggestion, not a requirement), hands you one prompt file with your answers already in it, and runs the `model.js` your assistant writes in the online explorer, with nothing to download or install. It is the same page and the same `model.js` as the steps below.
 
 ## The steps
 
