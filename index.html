@@ -120,28 +120,23 @@ label.ctl input[type=file]{display:none}
 #readout{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
 
 /* Charts */
-#charts{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;padding:12px 16px 6px;overflow:auto}
-#charts::-webkit-scrollbar{width:10px}
-#charts::-webkit-scrollbar-thumb{background:var(--track);border-radius:5px;border:2px solid var(--bg)}
-#charts-more{position:relative;height:0;z-index:4}
-#charts-more span{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--accent-fg);font-size:12px;padding:3px 12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none;white-space:nowrap}
-#charts-more.off{display:none}
-.chart{display:flex;flex-direction:column;min-width:0;min-height:220px;background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 6px}
+#charts{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));grid-auto-rows:minmax(0,1fr);gap:12px;padding:12px 16px 6px;overflow:auto}   /* charts share the height and shrink; scrolling only if a plot would fall below 70 px */
+.chart{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 6px}
 .chart .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:2px}
-.chart .cv{flex:1;position:relative;min-height:150px}
+.chart .cv{flex:1;position:relative;min-height:70px}
 .chart .how{font-size:11px;color:var(--fg);margin-top:6px;line-height:1.35;display:flex;flex-direction:column;gap:3px}
 .chart .how .li{display:flex;align-items:flex-start;gap:7px}
 .chart .how .li img{flex-shrink:0;margin-top:1px}
 .chart .how .col{flex:0 0 64px;display:flex;justify-content:center;text-align:center}
 .chart .how .hd{font-size:10px;color:var(--muted);line-height:1.2}
 .chart .how b{color:var(--fg);font-weight:500}
-#sweep-area{display:none;border-top:1px dashed var(--rule);padding:10px 16px 6px;flex-shrink:0}
-#sweep-area.on{display:block}
+#sweep-area{display:none;border-top:1px dashed var(--rule);padding:10px 16px 6px}
+#sweep-area.on{display:flex;flex-direction:column;flex:1;min-height:0}
 #sweep-area .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:6px}
-#sweep-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
-#sweep-charts .chart{min-height:200px}
+#sweep-charts{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));grid-auto-rows:minmax(0,1fr);gap:12px;overflow:auto}
 
 /* State strip */
+#state.off{display:none}
 #state{flex-shrink:0;background:var(--panel);border-top:1px solid var(--rule);padding:8px 16px;display:flex;gap:18px;align-items:stretch;min-height:96px;overflow-x:auto}
 #state .ttl{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:4px}
 .cells{display:flex;gap:4px}
@@ -153,6 +148,7 @@ label.ctl input[type=file]{display:none}
 
 /* Event log */
 #log{height:110px;flex-shrink:0;border-top:1px solid var(--rule);overflow-y:auto;padding:6px 16px;background:var(--bg)}
+@media (max-height:700px){ #log{height:64px} #state{min-height:72px;padding:4px 16px} #charts{padding-top:8px} }   /* short windows: give the height to the charts */
 .line{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7;white-space:nowrap}
 .line:last-child{color:var(--fg)}
 
@@ -243,7 +239,6 @@ label.ctl input[type=file]{display:none}
     </div>
 
     <div id="charts"></div>
-    <div id="charts-more" class="off" aria-hidden="true"><span>↓ more below: scroll the charts</span></div>
 
     <div id="sweep-area"><div class="ttl" id="sweep-title">Sweep</div><div id="sweep-charts"></div></div>
 
@@ -590,9 +585,6 @@ const App = {
     this.interval = 410 - 80;
     // pop-up windows
     $('backdrop').addEventListener('click', () => this.closePanel());
-    $('charts').addEventListener('scroll', () => this.moreCue());
-    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.moreCue()).observe($('charts'));
-    window.addEventListener('resize', () => this.moreCue());
     document.querySelectorAll('.box .x').forEach(x => x.addEventListener('click', () => this.closePanel()));
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.panel) this.closePanel(); });
     $('chip-load').addEventListener('click', () => this.togglePanel('loader'));
@@ -773,10 +765,7 @@ const App = {
       box.appendChild(wrap);
       this.charts[c.id] = this.makeChart($('cv-' + c.id), c, this.model.T, 'period');
     }
-    setTimeout(() => this.moreCue(), 0);
   },
-  // show "more below" whenever the chart area does not fit and is not scrolled to the end
-  moreCue(){ const c = $('charts'); $('charts-more').classList.toggle('off', !(c.scrollHeight > c.clientHeight + 4 && c.scrollTop + c.clientHeight < c.scrollHeight - 4)); },
   clearCharts(){ for (const k in this.charts){ const ch = this.charts[k]; ch.data.datasets.forEach(d => { d.data = Array(d.data.length).fill(null); }); ch.update('none'); } },
   pushRec(rec){
     const t = rec.t - 1;
@@ -825,7 +814,7 @@ const App = {
     for (let i = 0; i <= this.t; i++) this.model.stepPeriod(this.rng);
   },
   reset(autoplay){
-    this.stopPlay(); this.mode = 'single'; this.t = -1; this.clearLog(); $('sweep-area').classList.remove('on');   // back to the one row of charts
+    this.stopPlay(); this.mode = 'single'; this.t = -1; this.clearLog(); $('sweep-area').classList.remove('on'); $('state').classList.remove('off');   // back to one row of charts and the state strip
     if (this.chartSpec !== this.model.charts) this.buildCharts(this.model.charts);
     this.seedUsed = this.pickSeed();
     this.rng = makeRng(this.seedUsed);
@@ -863,7 +852,7 @@ const App = {
     setTimeout(() => {
       if (this.chartSpec !== this.model.charts) this.buildCharts(this.model.charts);
       const t0 = performance.now(); const B = runBatch(this.model, S, seed); const ms = Math.round(performance.now() - t0);
-      this.mode = `mean of ${S} runs ± 1 sd`; this.lastBatch = B; this.lastSweep = null; $('sweep-area').classList.remove('on');
+      this.mode = `mean of ${S} runs ± 1 sd`; this.lastBatch = B; this.lastSweep = null; $('sweep-area').classList.remove('on'); $('state').classList.add('off');
       this.clearCharts(); this.plotBatch(B); this.renderState(null); this.counter(); this.readout('');
       this.clearLog(); this.addLog(`batch: ${S} runs, base seed ${seed}, ${ms} ms · ${this.paramString()}`);
       for (const k of B.keys) this.addLog(`${k}: final-period mean ${fmt(final(B,k))} (sd ${fmt(B.sd[k][B.T-1])})`);
@@ -890,7 +879,7 @@ const App = {
       this.model.p[key] = saved;
       const ms = Math.round(performance.now() - t0);
       this.showCompare(Bon, Boff, onL, offL);
-      this.mode = `${onL} vs ${offL} · mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null; $('sweep-area').classList.remove('on');
+      this.mode = `${onL} vs ${offL} · mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null; $('sweep-area').classList.remove('on'); $('state').classList.add('off');
       this.renderState(null); this.counter(); this.readout('');
       this.clearLog(); this.addLog(`compare ${key}=${cmp.on} (${onL}) vs ${key}=${cmp.off} (${offL}): ${S} runs each, base seed ${seed}, ${ms} ms · other parameters ${this.paramString()}`);
       for (const k of Bon.keys) this.addLog(`${k}: final-period mean ${fmt(final(Bon,k))} ${onL} vs ${fmt(final(Boff,k))} ${offL} (difference ${fmt(final(Bon,k) - final(Boff,k))})`);
@@ -1021,7 +1010,7 @@ const App = {
     // charts: draw the mean ± 1 sd on the page, as Batch or Compare would, then save each canvas
     if (cmp) this.showCompare(Bs[0], Bs[1], conds[0].label, conds[1].label);
     else { this.buildCharts(m.charts); this.plotBatch(Bs[0]); }
-    this.mode = (cmp ? `${conds[0].label} vs ${conds[1].label} · ` : '') + `mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null; $('sweep-area').classList.remove('on');
+    this.mode = (cmp ? `${conds[0].label} vs ${conds[1].label} · ` : '') + `mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null; $('sweep-area').classList.remove('on'); $('state').classList.add('off');
     this.renderState(null); this.counter(); this.readout('');
     this.clearLog(); this.addLog(`download: ${S} runs${cmp ? ' per setting' : ''}, base seed ${seed} · ${this.paramString()}`);
     for (const k of Bs[0].keys) if (m.charts.some(c => c.series.some(x => x.key === k))) this.addLog(cmp ? `${k}: final-period mean ${fmt(final(Bs[0],k))} ${conds[0].label} vs ${fmt(final(Bs[1],k))} ${conds[1].label}` : `${k}: final-period mean ${fmt(final(Bs[0],k))} (sd ${fmt(Bs[0].sd[k][T-1])})`);
@@ -1109,7 +1098,7 @@ const App = {
       this.model.p[key] = saved;
       const ms = Math.round(performance.now() - t0);
       this.lastSweep = { key, values, S, res }; this.mode = `sweep over ${d.label}`; this.counter();
-      const area = $('sweep-area'); area.classList.add('on');
+      const area = $('sweep-area'); area.classList.add('on'); $('state').classList.add('off');
       $('sweep-title').textContent = `Sweep: final-period outcome vs ${d.label} (${S} runs per value, mean ± 1 sd; other parameters as set)`;
       for (const k in this.sweepCharts) this.sweepCharts[k].destroy(); this.sweepCharts = {};
       const box = $('sweep-charts'); box.innerHTML = '';
