@@ -111,7 +111,8 @@ ul.tight li{margin-bottom:2px}
 .warnbox{display:none;background:var(--warn-bg);border:1px solid var(--warn);border-radius:4px;padding:10px 14px;margin-top:14px;font-size:14px}
 .warnbox.on{display:block}
 .msg{font-size:13px;color:var(--muted)}
-ol.do{margin:6px 0 0 22px}
+ol.do{margin:6px 0 0 22px;list-style-type:lower-alpha}
+figure.example{margin:12px 0 6px}
 ol.do li{margin-bottom:9px;padding-left:4px}
 details{margin-top:10px}
 summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
@@ -131,7 +132,6 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
       <ol class="steps" id="steps">
         <li data-step="1"><button type="button" data-go="1"><span class="dot">1</span><span class="lbl">Describe your model</span></button></li>
         <li data-step="2"><button type="button" data-go="2"><span class="dot">2</span><span class="lbl">Build it and run it online</span></button></li>
-        <li data-step="3"><button type="button" data-go="3"><span class="dot">3</span><span class="lbl">See an example</span></button></li>
       </ol>
     </nav>
   </div>
@@ -250,7 +250,12 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
   <div class="card">
     <h3>3. Run it in the explorer</h3>
     <ol class="do">
-      <li>Open the <a href="https://carolynjfu.com/sim-explorer/" target="_blank" rel="noopener">online explorer</a>. It starts with the built-in example.</li>
+      <li>Open the <a href="https://carolynjfu.com/sim-explorer/" target="_blank" rel="noopener">online explorer</a>. It starts with the built-in example, which looks like this:
+        <figure class="example">
+          <img src="example.gif" id="example-gif" alt="The explorer running the built-in example. Settings are on the left. On the right, three line charts fill in period by period over 60 periods: performance of the people relative to the best possible, trust in the AI advisor, and how different the people's projects are. Below them, a strip shows the current state and a log adds one line per period. At the end, the Compare button overlays the averages with and without the AI.">
+          <figcaption>The built-in example: 20 people search for a good project on a rugged landscape, and an AI advisor recommends changes to them. The animation steps through one run, then presses Compare. Each “without AI” line is drawn in the same colour as its “with AI” line, with hollow markers and a different line style. Your model will appear in the same layout. <a href="https://github.com/lynjfu/sim-explorer/tree/main/examples/ai-advisor" target="_blank" rel="noopener">Read the example's answers and code</a>.</figcaption>
+        </figure>
+      </li>
       <li>Press the green <b>Load your own model</b> button in the top-right corner, paste the code into the box that opens, and press <b>Load pasted code</b> under it. If the assistant gave you a file instead, press <b>Choose model.js file</b>.</li>
       <li>Look at the top-right corner. <span class="kbd">self-check: passed ✓</span> means your model is running. If it says <span class="kbd">failed ✗</span>, click it, press “Copy report”, paste the report back to the assistant with the words “please fix this”, and load the new version the same way.</li>
     </ol>
@@ -270,27 +275,11 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
 
   <div class="nav">
     <button type="button" class="btn" data-go="1">← Back to your answers</button>
-    <button type="button" class="btn primary" data-go="3">Next: see an example →</button>
+    <span class="small">Your answers stay saved in this browser.</span>
   </div>
 </section>
 
 <!-- ============================ STEP 3 ============================ -->
-<section class="page" id="page3" aria-labelledby="h3">
-  <h2 id="h3">See an example</h2>
-  <p class="lead">This is what you will get: your model, running in the explorer, with its settings on the left and its charts on the right.</p>
-  <figure class="card" style="padding:12px">
-    <img src="example.gif" id="example-gif" alt="The explorer running the built-in example. Settings are on the left. On the right, three line charts fill in period by period over 60 periods: performance of the people relative to the best possible, trust in the AI advisor, and how different the people's projects are. Below them, a strip shows the current state and a log adds one line per period. At the end, the Compare button overlays the averages with and without the AI.">
-    <figcaption id="example-caption">The built-in example: 20 people search for a good project on a rugged landscape, and an AI advisor recommends changes to them. The animation steps through one run, then presses Compare. Each “without AI” line is drawn in the same colour as its “with AI” line, with hollow markers and a different line style.</figcaption>
-  </figure>
-  <div class="row" style="margin-top:4px">
-    <a class="btn primary" href="https://carolynjfu.com/sim-explorer/" target="_blank" rel="noopener">Open the example explorer</a>
-    <a class="btn" href="https://github.com/lynjfu/sim-explorer/tree/main/examples/ai-advisor" target="_blank" rel="noopener">Read the example's answers and code</a>
-  </div>
-  <div class="nav">
-    <button type="button" class="btn" data-go="2">← Back to building it</button>
-    <span class="small">Your answers stay saved in this browser.</span>
-  </div>
-</section>
 
 </main>
 
@@ -431,7 +420,7 @@ $('btn-copy-prompt').addEventListener('click', () => {
 // ---- steps ----
 let step = 1;
 function go(n, push){
-  n = Math.max(1, Math.min(3, n)); step = n;
+  n = Math.max(1, Math.min(2, n)); step = n;
   document.querySelectorAll('section.page').forEach(s => s.classList.toggle('on', s.id === 'page' + n));
   document.querySelectorAll('#steps li').forEach(li => {
     const k = +li.dataset.step; li.classList.toggle('current', k === n); li.classList.toggle('done', k < n);
