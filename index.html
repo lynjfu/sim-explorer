@@ -41,6 +41,8 @@ code{font-family:var(--mono);font-size:.92em}
 #topbar .hint{font-size:12px;color:var(--muted)}
 .chip{font-family:var(--mono);font-size:11px;padding:3px 8px;border:1px solid var(--track);border-radius:3px;background:var(--card);color:var(--muted);cursor:pointer}
 .running{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.chip.link{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:5px 12px;background:var(--card);color:var(--fg);border-color:var(--track)}
+.box input.linkout{font-family:var(--mono);font-size:12px;width:min(100%,520px);padding:5px 8px}
 .chip.bad{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
 .chip.go{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:5px 12px;background:var(--go);border-color:var(--go);color:var(--go-fg)}
 .chip.go:hover{filter:brightness(1.08)}
@@ -151,6 +153,7 @@ label.ctl input[type=file]{display:none}
   <span class="running" id="chip-source">Running: …</span>
   <button class="chip" id="chip-check" title="Show the self-check report">self-check: …</button>
   <button class="chip go" id="chip-load" title="Paste the model.js your AI assistant wrote, or choose the file. Only you will see it: it runs in your browser and is not uploaded.">Load your own model</button>
+  <button class="chip link" id="chip-link" title="Make a short link to the model you loaded, to open it on another computer or send it to someone">Get a short link</button>
   <button class="chip dl" id="chip-dl" title="Download a zip with the model code, this page, and the results of many runs at the current settings">Download zip</button>
 </div>
 
@@ -179,6 +182,17 @@ label.ctl input[type=file]{display:none}
       <p>Run automatically when a model loads. A failing line is something to paste back to your AI assistant, together with the question “please fix this”.</p>
       <pre id="check-text"></pre>
       <div class="row"><button class="ctl" id="btn-copy-check">Copy report</button><button class="ctl" id="btn-rerun-check">Run again</button><span id="check-msg"></span></div>
+    </div>
+    <div id="linkbox" class="box off">
+      <div class="ttl">Short link to your model</div>
+      <p class="private">🔒 Anyone you give this link to can open your model. Nobody can find it without the link, and the page still shows everyone else the built-in example.</p>
+      <div class="row"><input class="linkout" id="link-out" readonly aria-label="short link"><button class="ctl" id="btn-link-copy">Copy</button><span id="link-msg"></span></div>
+      <p style="margin-top:8px">The link opens this exact version. If you change your model, make a new link. Links stop working a year after they were first made.</p>
+    </div>
+    <div id="linkrun" class="box off">
+      <div class="ttl">A model from a link</div>
+      <p class="private">This link contains a model written by whoever shared it. It runs only in your browser; nothing is sent anywhere.</p>
+      <div class="row"><button class="ctl primary" id="btn-link-run">Run the model in this link</button><button class="ctl" id="btn-link-skip">Show the built-in example instead</button><span id="linkrun-msg"></span></div>
     </div>
     <div id="dlbox" class="box off">
       <div class="ttl">Download code and results</div>
@@ -492,6 +506,7 @@ const dashWord = d => !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : '
 const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
 const $ = id => document.getElementById(id);
 const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;   // this page as loaded, for the Download zip
+const LINK_SERVICE = 'https://sim-links.carolynjfu.workers.dev';   // links/worker.js, deployed on Cloudflare
 const STORE_CODE = 'explorer-model-code';
 const ABOUT_KEYS = [['task','Task environment'],['representation','Representation'],['actions','Actions'],['feedback','Feedback'],['transformation','Transformation']];
 const aboutHtml = ab => Array.isArray(ab) ? ab.map(p => `<p>${p}</p>`).join('') : ABOUT_KEYS.filter(([k]) => ab[k]).map(([k, lab]) => `<p><b>${lab}.</b> ${ab[k]}</p>`).join('');
@@ -522,9 +537,15 @@ const App = {
     $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); });
     $('btn-copy-check').addEventListener('click', () => this.copyText(this.check ? this.check.lines.join('\n') : '', null, null, 'check-msg', 'Report'));
     $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
+    $('chip-link').addEventListener('click', () => this.makeLink());
+    $('btn-link-copy').addEventListener('click', () => this.copyText($('link-out').value, null, null, 'link-msg', 'Link'));
+    $('btn-link-run').addEventListener('click', () => { const c = this.linkCode; if (!c) return; $('linkrun').classList.add('off'); this.loadCode(c, 'the model from this link', false); });
+    $('btn-link-skip').addEventListener('click', () => { $('linkrun').classList.add('off'); history.replaceState(null, '', location.pathname); this.useBuiltin(false); });
     $('chip-dl').addEventListener('click', () => { const b = $('dlbox'); b.classList.toggle('off'); if (!b.classList.contains('off')) this.prepareDownload(); });
     $('btn-dl').addEventListener('click', () => this.download());
     $('dl-code-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { this.codeText = txt; $('dl-code-msg').textContent = `${f.name} will be included.`; }); });
+    const linkId = (new URLSearchParams(location.search).get('m') || '').toLowerCase();
+    if (/^[a-z2-9]{12}$/.test(linkId)){ this.openLink(linkId); return; }
     // which model runs: a model written into this page (a downloaded explorer) wins; else a saved pasted model; else model.js; else ask
     const inlineModel = this.inlineModel = Array.from(document.scripts).some(sc => !sc.src && !sc.id && /const\s+MODELS\s*=/.test(sc.textContent));
     let saved = null; if (!inlineModel){ try { saved = localStorage.getItem(STORE_CODE); } catch(e){} }
@@ -797,6 +818,32 @@ const App = {
     this.buildCharts(spec);
     const lookup = {}; for (const k of Bon.keys){ lookup[k + '__on'] = { B: Bon, key: k }; lookup[k + '__off'] = { B: Boff, key: k }; }
     this.plotBatch(lookup, spec, s => s.key);
+  },
+
+  // ---- short links: the code is stored by the link service; the page only sends it when asked ----
+  openLink(id){
+    this.useBuiltin(false);   // the example runs behind the question
+    const box = $('linkrun'); box.classList.remove('off'); $('btn-link-run').disabled = true; $('linkrun-msg').textContent = 'fetching the model…';
+    fetch(`${LINK_SERVICE}/m/${id}`).then(r => r.ok ? r.text() : r.json().then(j => Promise.reject(new Error(j.error || 'not found'))))
+      .then(code => { this.linkCode = code; $('btn-link-run').disabled = false; $('linkrun-msg').textContent = `${(code.length / 1024).toFixed(1)} KB of model code.`; })
+      .catch(e => { $('linkrun-msg').textContent = 'Could not open this link: ' + e.message; });
+  },
+  async makeLink(){
+    const box = $('linkbox'); box.classList.remove('off'); const msg = $('link-msg'); $('link-out').value = '';
+    if (!this.codeText && this.inlineModel){ const sc = Array.from(document.scripts).find(x => !x.src && !x.id && /const\s+MODELS\s*=/.test(x.textContent)); if (sc) this.codeText = sc.textContent.replace(/^\n/, ''); }
+    if (!this.codeText){
+      msg.textContent = /built-in/.test($('chip-source').textContent) ? 'This is the built-in example. Press “Load your own model” first, then make a link to yours.' : 'The model code could not be read here. Load it with “Load your own model”, then try again.';
+      return;
+    }
+    if (!/^https:\/\/(carolynjfu\.com|lynjfu\.github\.io)$/.test(location.origin)){ msg.textContent = 'Short links can be made only on the online explorer, carolynjfu.com/sim-explorer.'; return; }
+    msg.textContent = 'making the link…';
+    try {
+      const r = await fetch(`${LINK_SERVICE}/save`, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: this.codeText });
+      const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
+      const url = `${location.origin}${location.pathname}?m=${j.id}`;
+      $('link-out').value = url; $('link-out').select();
+      this.copyText(url, null, null, 'link-msg', 'Link');
+    } catch (e){ msg.textContent = 'Could not make a link: ' + e.message; }
   },
 
   // ---- download: code, page and results of many runs, as one zip ----
