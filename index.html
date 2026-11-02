@@ -124,7 +124,9 @@ label.ctl input[type=file]{display:none}
 .chart{display:flex;flex-direction:column;min-width:0;min-height:220px;background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 6px}
 .chart .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:2px}
 .chart .cv{flex:1;position:relative;min-height:150px}
-.chart .how{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.chart .how{font-size:11px;color:var(--fg);margin-top:6px;line-height:1.35;display:flex;flex-direction:column;gap:3px}
+.chart .how .li{display:flex;align-items:flex-start;gap:7px}
+.chart .how .li img{flex-shrink:0;margin-top:1px}
 .chart .how b{color:var(--fg);font-weight:500}
 #sweep-area{display:none;border-top:1px dashed var(--rule);padding:10px 16px 6px;flex-shrink:0}
 #sweep-area.on{display:block}
@@ -390,6 +392,11 @@ function zipParts(files, date){
   return parts.concat(central, [new Uint8Array(e.buffer)]);
 }
 
+// Line style classes as a reader sees them, and the "off" twin Compare draws for every series:
+// same colour, hollow marker, and a different line (solid → dashed, dashed → dotted, dotted → dashed).
+function dashClass(d){ return !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : 'dashed'); }
+function compareTwin(s){ const cls = dashClass(s.dash); return Object.assign({}, s, { dash: cls === 'dashed' ? [2,3] : [6,3], hollow: true }); }
+
 // Self-check. Runs the same checks in the browser and in scripts/smoke_test.sh.
 // Returns { ok, failures, lines[] }. Lines beginning with "FAIL" are failures; "WARN" lines are advice.
 function runSelfCheck(models, opts){
@@ -441,6 +448,12 @@ function runSelfCheck(models, opts){
           combos.add(combo);
         }
         if (c.series.length > 4) note(`WARN ${tag}: chart ${c.id} has ${c.series.length} series; one to three is readable`);
+        if (m.compare){
+          const look = x => [dashClass(x.dash), x.marker || 'circle', !!x.hollow].join('/');
+          const drawn = c.series.flatMap(x => [{ who: `${x.key} (${m.compare.labelOn || 'on'})`, k: look(x) }, { who: `${x.key} (${m.compare.labelOff || 'off'})`, k: look(compareTwin(x)) }]);
+          const seen = {};
+          for (const d of drawn){ if (seen[d.k]) note(`WARN ${tag}: chart ${c.id}: in Compare, ${seen[d.k]} and ${d.who} would be drawn with the same line and marker; give one of these series a different marker`); else seen[d.k] = d.who; }
+        }
       }
     }
     if (m.charts.length > 4) note(`WARN ${tag}: ${m.charts.length} charts; two to four fit on a laptop screen`);
@@ -515,7 +528,7 @@ const css = () => getComputedStyle(document.documentElement);
 const tok = k => css().getPropertyValue(k).trim();
 const colorOf = name => tok(OI[name] || '--oi-black');
 const MARKER_WORD = { circle:'circles', triangle:'triangles', rect:'squares', rectRot:'diamonds', cross:'crosses', star:'stars' };
-const dashWord = d => !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : 'dashed');
+const dashWord = dashClass;
 const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
 const shortLabel = (t, max = 34) => {
   if (t.length <= max) return t;
@@ -523,14 +536,15 @@ const shortLabel = (t, max = 34) => {
   return m ? m[1].slice(0, max - m[2].length - 1).trimEnd() + '…' + m[2] : t.slice(0, max - 1) + '…';
 };
 // A legend sample of one series: a short stretch of its line with its dash pattern, and its marker (filled or hollow) in the middle.
-const legendSwatch = s => {
-  const w = 30, h = 12, cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  const g = cv.getContext('2d'), c = colorOf(s.color);
+const legendSwatch = (s, scale = 2) => {
+  const w = 30, h = 12, cv = document.createElement('canvas'); cv.width = w * scale; cv.height = h * scale;
+  const g = cv.getContext('2d'), c = colorOf(s.color); g.scale(scale, scale);
   g.strokeStyle = c; g.lineWidth = 1.6; g.setLineDash(s.dash || []); g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke(); g.setLineDash([]);
   g.fillStyle = s.hollow ? tok('--card') : c; g.lineWidth = 1.4;
   Chart.helpers.drawPoint(g, { pointStyle: s.marker || 'circle', radius: 3.5, borderWidth: 1.4, rotation: 0 }, w / 2, h / 2);
   return cv;
 };
+const legendHtml = series => series.map(x => `<div class="li"><img src="${legendSwatch(x).toDataURL()}" width="30" height="12" alt=""><span>${x.label}</span></div>`).join('');
 const $ = id => document.getElementById(id);
 const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;   // this page as loaded, for the Download zip
 const LINK_SERVICE = 'https://sim-links.carolynfu.workers.dev';   // links/worker.js, deployed on Cloudflare
@@ -719,9 +733,7 @@ const App = {
     return new Chart(canvas.getContext('2d'), { type: 'line',
       data: { labels: categories || Array.from({length: T}, (_, i) => i + 1), datasets },
       options: { animation: false, responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, pointStyleWidth: 30, color: fg, font: { family: tok('--mono'), size: 10 }, filter: it => !datasets[it.datasetIndex].band,
-                     // each entry shows a sample of its line (dashes and marker), and a long label is shortened in the middle so an ending like "(without AI)" stays visible
-                     generateLabels: ch => Chart.defaults.plugins.legend.labels.generateLabels(ch).map(l => { const ds = datasets[l.datasetIndex]; return Object.assign(l, { text: shortLabel(l.text || ''), pointStyle: ds && ds._series ? legendSwatch(ds._series) : l.pointStyle }); }) } },
+        plugins: { legend: { display: false },   // the legend is drawn under the chart from the series fields, with full labels
                    tooltip: { enabled: true, filter: it => !datasets[it.datasetIndex].band } },
         scales: { x: { type: categories ? 'category' : 'linear', min: categories ? undefined : 1, max: categories ? undefined : xMax, title: { display: true, text: xLabel, color: fg, font: { size: 10 } }, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 8 } },
                   y: { min: spec.yMin, max: spec.yMax, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 6 } } } } });
@@ -732,7 +744,7 @@ const App = {
     for (const c of spec){
       const wrap = document.createElement('div'); wrap.className = 'chart';
       const note = c.note || '';
-      wrap.innerHTML = `<div class="ttl">${c.title}${note ? ` <button class="info" title="${note.replace(/"/g,'&quot;')}" aria-label="what to look for in this chart">ⓘ</button>` : ''}</div><div class="tip off"></div><div class="cv"><canvas id="cv-${c.id}" aria-label="${c.title}"></canvas></div><div class="how">${c.series.map(seriesWords).join(' · ')}</div>`;
+      wrap.innerHTML = `<div class="ttl">${c.title}${note ? ` <button class="info" title="${note.replace(/"/g,'&quot;')}" aria-label="what to look for in this chart">ⓘ</button>` : ''}</div><div class="tip off"></div><div class="cv"><canvas id="cv-${c.id}" aria-label="${c.title}"></canvas></div><div class="how">${legendHtml(c.series)}</div>`;
       if (note){ const t = wrap.querySelector('.tip'); t.textContent = note; wrap.querySelector('.info').addEventListener('click', () => t.classList.toggle('off')); }
       box.appendChild(wrap);
       this.charts[c.id] = this.makeChart($('cv-' + c.id), c, this.model.T, 'period');
@@ -863,10 +875,9 @@ const App = {
 
   // derived chart spec: each series twice; "off" has hollow markers and a different line: solid → dashed, dashed → dotted, dotted → dashed
   showCompare(Bon, Boff, onL, offL){
-    const offDash = d => (!d || !d.length) ? [6,3] : (d[0] <= 2 ? [6,3] : [2,3]);
     const spec = this.model.charts.map(c => ({ id: c.id, title: c.title, yMin: c.yMin, yMax: c.yMax, series: c.series.flatMap(s => [
       Object.assign({}, s, { key: s.key + '__on',  label: `${s.label} (${onL})` }),
-      Object.assign({}, s, { key: s.key + '__off', label: `${s.label} (${offL})`, dash: offDash(s.dash), hollow: true }),
+      Object.assign(compareTwin(s), { key: s.key + '__off', label: `${s.label} (${offL})` }),
     ]) }));
     this.buildCharts(spec);
     const lookup = {}; for (const k of Bon.keys){ lookup[k + '__on'] = { B: Bon, key: k }; lookup[k + '__off'] = { B: Boff, key: k }; }
@@ -994,7 +1005,7 @@ const App = {
       const cv = $('cv-' + c.id); if (!cv) continue;
       const words = c.series.map(x => seriesWords(x).replace(/<[^>]+>/g, ''));
       chartWords.push(`charts/${c.id}.png: ${c.title}. ${words.join('; ')}.`);
-      pngs.push({ name: `${folder}/charts/${c.id}.png`, data: await this.chartPng(cv, c.title, `How to read: ${words.join(' · ')}. Each line is the mean over ${S} runs; the shaded band is ± 1 standard deviation.`) });
+      pngs.push({ name: `${folder}/charts/${c.id}.png`, data: await this.chartPng(cv, c.title, c.series, `Each line is the mean over ${S} runs; the shaded band is ± 1 standard deviation.`) });
     }
     const code = this.codeText;
     const readme = [
@@ -1027,21 +1038,30 @@ const App = {
     this.saveBlob(blob, folder + '.zip');
     msg.textContent = `Saved ${folder}.zip (${(blob.size / 1e6).toFixed(1)} MB; ${S * conds.length} runs in ${secs.toFixed(1)} s).` + (code ? '' : ' The model code is not in it; see above.');
   },
-  chartPng(canvas, title, footer){
+  chartPng(canvas, title, series, footnote){
     const scale = (canvas.width / canvas.clientWidth) || 1, pad = 14 * scale, w = canvas.width + 2 * pad;
-    const fs = 12 * scale, measure = document.createElement('canvas').getContext('2d');
-    measure.font = `${fs}px ${tok('--sans')}`;
-    const lines = []; let cur = '';
-    for (const word of footer.split(' ')){ const next = cur ? cur + ' ' + word : word; if (cur && measure.measureText(next).width > w - 2 * pad){ lines.push(cur); cur = word; } else cur = next; }
-    if (cur) lines.push(cur);
-    const head = 30 * scale, foot = (lines.length * 16 + 12) * scale;
+    const fs = 12 * scale, lh = 16 * scale, sw = 30 * scale, gap = 8 * scale;
+    const measure = document.createElement('canvas').getContext('2d'); measure.font = `${fs}px ${tok('--sans')}`;
+    const wrap = (text, width) => { const out = []; let cur = ''; for (const word of text.split(' ')){ const next = cur ? cur + ' ' + word : word; if (cur && measure.measureText(next).width > width){ out.push(cur); cur = word; } else cur = next; } if (cur) out.push(cur); return out; };
+    // one legend row per series: its drawn line sample, then its full label (wrapped, never cut)
+    const rows = series.map(x => ({ swatch: legendSwatch(x, scale), lines: wrap(x.label, w - 2 * pad - sw - gap) }));
+    const noteLines = wrap(footnote, w - 2 * pad);
+    const head = 30 * scale, legendH = rows.reduce((h, r) => h + r.lines.length * lh + 4 * scale, 0), foot = legendH + noteLines.length * lh + 16 * scale;
     const out = document.createElement('canvas'); out.width = w; out.height = canvas.height + head + foot;
     const ctx = out.getContext('2d');
     ctx.fillStyle = tok('--card'); ctx.fillRect(0, 0, out.width, out.height);
     ctx.fillStyle = tok('--fg'); ctx.font = `600 ${13 * scale}px ${tok('--sans')}`; ctx.fillText(title, pad, 20 * scale);
     ctx.drawImage(canvas, pad, head);
-    ctx.fillStyle = tok('--muted'); ctx.font = `${fs}px ${tok('--sans')}`;
-    lines.forEach((l, i) => ctx.fillText(l, pad, head + canvas.height + (16 + 16 * i) * scale));
+    let y = head + canvas.height + 8 * scale;
+    ctx.font = `${fs}px ${tok('--sans')}`;
+    for (const r of rows){
+      ctx.drawImage(r.swatch, pad, y + 2 * scale, sw, 12 * scale);
+      ctx.fillStyle = tok('--fg');
+      r.lines.forEach((l, i) => ctx.fillText(l, pad + sw + gap, y + 12 * scale + i * lh));
+      y += r.lines.length * lh + 4 * scale;
+    }
+    ctx.fillStyle = tok('--muted');
+    noteLines.forEach((l, i) => ctx.fillText(l, pad, y + 12 * scale + i * lh));
     return new Promise((res, rej) => out.toBlob(b => b ? b.arrayBuffer().then(buf => res(new Uint8Array(buf))) : rej(new Error('chart image failed')), 'image/png'));
   },
   saveBlob(blob, name){
@@ -1068,7 +1088,7 @@ const App = {
       const box = $('sweep-charts'); box.innerHTML = '';
       for (const c of this.model.charts){
         const wrap = document.createElement('div'); wrap.className = 'chart';
-        wrap.innerHTML = `<div class="ttl">${c.title}</div><div class="cv"><canvas id="sw-${c.id}"></canvas></div><div class="how">${c.series.map(seriesWords).join(' · ')}</div>`;
+        wrap.innerHTML = `<div class="ttl">${c.title}</div><div class="cv"><canvas id="sw-${c.id}"></canvas></div><div class="how">${legendHtml(c.series)}</div>`;
         box.appendChild(wrap);
         const ch = this.makeChart($('sw-' + c.id), c, values.length, d.label, values.map(v => d.fmt ? d.fmt(v) : String(v)));
         ch.data.datasets.forEach(ds => { if (!ds.band) ds.pointRadius = 4; });

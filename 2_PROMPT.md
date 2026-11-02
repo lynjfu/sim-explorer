@@ -93,7 +93,7 @@ Follow `MODEL_CONTRACT.md` exactly. In addition:
 - Write `about` as five short entries, `{ task, representation, actions, feedback, transformation }`, one or two sentences each, in the student's own terms (the five questions they answered, condensed). That is all the model description the page shows; keep it short. Give each chart a one-sentence `note` on what to look for in it; it appears only as hover text behind an ⓘ beside the chart title, so keep it short. Do not write `howToRead`: the page no longer shows it. Never describe line styles (the page writes those from the series fields).
 - Declare two to four `checks`: things the model must do if it is right, in plain words. Examples: "with the AI switched off, nobody follows it"; "when the task has one best answer, everyone finds it"; "when exploration is zero, nobody ever tries something new". Prefer exact or comparative checks over numeric thresholds you cannot compute (see the contract). The page runs them when the model loads.
 - The patterns in the contract (softmax choice, move-part-way updating) are offers, not defaults. If the student described a different rule ("pick the best, sometimes try one at random"), implement the student's rule.
-- Follow the chart rules: every line in a chart is told apart by its dash pattern and marker shape before its colour; colours are from the page's list; one to three lines per chart.
+- Follow the chart rules: every line in a chart is told apart by its dash pattern and marker shape before its colour; colours are from the page's list; one to three lines per chart. If there is an AI on/off switch, check the lines will still differ when Compare draws each one twice (see the contract), and keep series labels short, since the legend always shows them in full.
 
 ## Step 5. Deliver
 
@@ -200,6 +200,8 @@ Any other runtime field (`env`, `agents`, `t`, …) is yours. Do not name one `p
 - `color`: one of `blue, orange, green, yellow, sky, purple, black`, used in that order. They are a colour-blind-safe set.
 - `dash`: `[]` solid, `[6,3]` dashed, `[2,3]` dotted. `marker`: `circle, triangle, rect, rectRot, cross, star`. `hollow: true` draws the marker unfilled.
 - Within one chart, no two series may share both dash and marker: a reader who cannot see colour must still tell them apart. The focal series is solid with filled markers; a comparison or baseline is dashed with hollow markers.
+- The page draws one legend under each chart, in every view (a single run, Batch, Compare, Sweep, and the chart images in Download zip): a short sample of each line, with its dash pattern and marker, followed by the series' full `label`. Labels are never shortened, so make each one complete but short (a few words, no line-style words).
+- Compare draws every series twice: as declared ("on"), and again ("off") in the same colour with hollow markers and a different line: solid becomes dashed, dashed becomes dotted, dotted becomes dashed. Choose dash patterns and markers so that no two of the lines drawn in one chart look the same in Compare; the self-check warns when two would.
 - Two to four charts, one to three series each. Fixed `yMin`/`yMax` so a single run and a batch are comparable (shares and normalised performance: 0 to 1).
 - The first chart is always system performance over time; the second, where agents can differ, their heterogeneity over time; a third, optional, about the AI. See the instructions, slot 10.
 
