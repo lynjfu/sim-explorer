@@ -40,6 +40,7 @@ code{font-family:var(--mono);font-size:.92em}
 #topbar .spacer{flex:1}
 #topbar .hint{font-size:12px;color:var(--muted)}
 .chip{font-family:var(--mono);font-size:11px;padding:3px 8px;border:1px solid var(--track);border-radius:3px;background:var(--card);color:var(--muted);cursor:pointer}
+.running{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .chip.bad{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
 .chip.go{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:5px 12px;background:var(--go);border-color:var(--go);color:var(--go-fg)}
 .chip.go:hover{filter:brightness(1.08)}
@@ -147,7 +148,7 @@ label.ctl input[type=file]{display:none}
   <h1 id="title-el">Explorer</h1>
   <div id="tabs"></div>
   <span class="spacer"></span>
-  <button class="chip" id="chip-source" title="Which model code is running">model: …</button>
+  <span class="running" id="chip-source">Running: …</span>
   <button class="chip" id="chip-check" title="Show the self-check report">self-check: …</button>
   <button class="chip go" id="chip-load" title="Paste the model.js your AI assistant wrote, or choose the file. Only you will see it: it runs in your browser and is not uploaded.">Load your own model</button>
   <button class="chip dl" id="chip-dl" title="Download a zip with the model code, this page, and the results of many runs at the current settings">Download zip</button>
@@ -516,9 +517,8 @@ const App = {
     // loader
     $('chip-load').addEventListener('click', () => $('loader').classList.toggle('off'));
     $('chip-check').addEventListener('click', () => { $('checkbox').classList.toggle('off'); });
-    $('chip-source').addEventListener('click', () => $('loader').classList.toggle('off'));
-    $('btn-load-code').addEventListener('click', () => this.loadCode($('model-code').value, 'pasted model (saved in this browser)', true));
-    $('model-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { $('model-code').value = txt; this.loadCode(txt, `file ${f.name} (saved in this browser)`, true); }); });
+    $('btn-load-code').addEventListener('click', () => this.loadCode($('model-code').value, 'your pasted model', true));
+    $('model-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { $('model-code').value = txt; this.loadCode(txt, `your file ${f.name}`, true); }); });
     $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); });
     $('btn-copy-check').addEventListener('click', () => this.copyText(this.check ? this.check.lines.join('\n') : '', null, null, 'check-msg', 'Report'));
     $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
@@ -528,13 +528,13 @@ const App = {
     // which model runs: a model written into this page (a downloaded explorer) wins; else a saved pasted model; else model.js; else ask
     const inlineModel = this.inlineModel = Array.from(document.scripts).some(sc => !sc.src && !sc.id && /const\s+MODELS\s*=/.test(sc.textContent));
     let saved = null; if (!inlineModel){ try { saved = localStorage.getItem(STORE_CODE); } catch(e){} }
-    if (saved){ $('model-code').value = saved; if (!this.loadCode(saved, 'pasted model (saved in this browser)', false)) this.useBuiltin(false); }
+    if (saved){ $('model-code').value = saved; if (!this.loadCode(saved, 'your pasted model', false)) this.useBuiltin(false); }
     else this.useBuiltin(false);
   },
 
   useBuiltin(say){
-    if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.codeText = null; this.boot(MODELS, this.inlineModel ? 'model inside this page' : 'built-in model.js'); if (say) this.loadMsg('Using the built-in model.js.'); }
-    else { $('loader').classList.remove('off'); $('chip-source').textContent = 'model: none'; $('chip-check').textContent = 'self-check: —'; this.loadMsg('No model.js was found next to this page. Paste one above.'); }
+    if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.codeText = null; this.boot(MODELS, this.inlineModel ? 'the model in this page' : 'the built-in example'); if (say) this.loadMsg('Using the built-in model.js.'); }
+    else { $('loader').classList.remove('off'); $('chip-source').textContent = 'Running: no model yet'; $('chip-check').textContent = 'self-check: —'; this.loadMsg('No model.js was found next to this page. Paste one above.'); }
   },
   loadMsg(s, bad){ const el = $('load-msg'); el.textContent = s; el.style.color = bad ? 'var(--warn)' : ''; },
   loadCode(code, label, remember){
@@ -554,7 +554,7 @@ const App = {
   boot(models, sourceLabel){
     this.stopLoop(); this.stopPlay();
     this.models = models;
-    $('chip-source').textContent = 'model: ' + sourceLabel;
+    $('chip-source').textContent = 'Running: ' + sourceLabel;
     const tabs = $('tabs'); tabs.innerHTML = ''; tabs.style.display = models.length > 1 ? '' : 'none';   // one model: the heading is enough
     models.forEach((m, i) => {
       const b = document.createElement('button'); b.className = 'tab-btn' + (i === 0 ? ' active' : ''); b.textContent = m.name || m.id; b.dataset.id = m.id;
@@ -872,7 +872,7 @@ const App = {
     const fin = [condCol + 'run,seed,' + keys.join(',')];
     conds.forEach((c, i) => { for (let s = 0; s < S; s++) fin.push((cmp ? c.label + ',' : '') + (s+1) + ',' + runSeed(s) + ',' + keys.map(k => num(data[i][k][s*T + T - 1])).join(',')); });
     const params = {}; for (const d of m.params) params[d.key] = m.p[d.key];
-    const settings = { model: m.name || m.id, model_id: m.id, made: now.toISOString(), page: location.href.split('#')[0], code_source: $('chip-source').textContent.replace(/^model: /, ''),
+    const settings = { model: m.name || m.id, model_id: m.id, made: now.toISOString(), page: location.href.split('#')[0], code_source: $('chip-source').textContent.replace(/^Running: /, ''),
       runs_per_setting: S, periods: T, base_seed: seed, run_seed_rule: 'run r (counting from 1) uses seed (base_seed + (r - 1) * 7919) mod 2^32',
       parameters: params, compared: cmp ? { parameter: cmp.key, settings: conds.map(c => ({ label: c.label, value: c.val })) } : null, seconds_to_run: Math.round(secs * 10) / 10 };
     // charts: draw the mean ± 1 sd on the page, as Batch or Compare would, then save each canvas
