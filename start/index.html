@@ -9,15 +9,18 @@
 :root{
   --bg:#f3f4f6; --panel:#e9ebef; --card:#ffffff; --fg:#1f2328; --muted:#5c6470; --faint:#9aa1ab; --rule:#d3d7dd;
   --accent:#2f4b6e; --accent-fg:#ffffff; --track:#cfd4db; --warn:#8a5a00; --warn-bg:#fff4d6;
+  --ans-bg:#eaf1f9; --ans-rule:#2f4b6e; --input:#ffffff;
   --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
-  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark; }}
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark;
+  --ans-bg:#1c2633; --ans-rule:#8fb3dc; --input:#17191d; }}
 :root[data-theme="dark"]{
   --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
-  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark; }
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark;
+  --ans-bg:#1c2633; --ans-rule:#8fb3dc; --input:#17191d; }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
@@ -50,19 +53,45 @@ section.page{display:none}
 section.page.on{display:block}
 h2{font-size:24px;font-weight:600;line-height:1.25;margin-bottom:8px}
 h3{font-size:17px;font-weight:600;margin:0 0 6px}
-p{margin-bottom:12px;max-width:68ch}
+p{margin-bottom:12px}
+.intro{font-size:17px;line-height:1.5;margin-bottom:22px;padding:14px 18px;border-left:4px solid var(--accent);background:var(--card);border-radius:0 6px 6px 0}
 .lead{color:var(--muted);font-size:15.5px;margin-bottom:22px}
 .small{font-size:13px;color:var(--muted)}
 .card{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:18px 20px;margin-bottom:16px}
 .card.soft{background:var(--panel)}
-.stage{position:relative}
-.stage .num{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+/* Question cards: collapsed to their title; click to open. Status is a mark and a word, not a colour alone. */
+.stage{padding:0;overflow:hidden}
+.stage .head{width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:none;cursor:pointer;text-align:left}
+.stage .head:hover{background:var(--bg)}
+.stage .mark{width:30px;height:30px;border-radius:50%;border:2px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;background:var(--card);color:var(--muted)}
+.stage.answered .mark{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.stage .ttl{flex:1;min-width:0}
+.stage .ttl b{display:block;font-size:16.5px;font-weight:600}
+.stage .ttl span{display:block;font-size:13px;color:var(--muted)}
+.stage.open .preview-line{display:none}
+.stage .state{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.stage.answered .state{color:var(--fg);font-weight:500}
+.stage .chev{font-size:13px;color:var(--muted);transition:transform .15s;flex-shrink:0}
+.stage.open .chev{transform:rotate(90deg)}
+.stage .body{display:none;padding:0 18px 18px 62px}
+.stage.open .body{display:block}
+.stage.fixed .head{cursor:default}
+.stage.fixed .head:hover{background:none}
 .stage .q{color:var(--fg)}
-.stage .hint{font-size:13.5px;color:var(--muted);border-left:3px solid var(--track);padding-left:10px;margin:8px 0 12px}
+.stage .hint{font-size:13.5px;color:var(--muted);border-left:3px solid var(--track);padding-left:10px;margin:8px 0 14px}
 .stage .hint b{color:var(--fg);font-weight:500}
+/* The part to fill in: tinted panel, accent rule, pencil mark in the label */
+.answer{background:var(--ans-bg);border-left:4px solid var(--ans-rule);border-radius:0 6px 6px 0;padding:10px 14px 14px}
+.answer label.field:first-child{margin-top:2px}
+.answer label.field::before{content:"✎ ";color:var(--ans-rule)}
+.stage .next{margin-top:12px;display:flex;justify-content:flex-end}
+.tally{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:22px 0 10px}
+.tally b{font-size:17px}
+.linkbtn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13.5px;text-decoration:underline;padding:0}
+@media (max-width:640px){ .stage .body{padding-left:18px} .stage .state{display:none} }
 label.field{display:block;font-size:13px;font-weight:500;margin:10px 0 4px}
 label.field .who{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);margin-left:6px}
-textarea,input[type=text]{width:100%;background:var(--bg);border:1px solid var(--track);border-radius:4px;padding:9px 11px;line-height:1.5;resize:vertical}
+textarea,input[type=text]{width:100%;background:var(--input);border:1px solid var(--track);border-radius:4px;padding:9px 11px;line-height:1.5;resize:vertical}
 textarea{min-height:110px}
 .ai-only{display:none}
 body.has-ai .ai-only{display:block}
@@ -85,13 +114,13 @@ ul.tight li{margin-bottom:2px}
 .warnbox.on{display:block}
 .msg{font-size:13px;color:var(--muted)}
 ol.do{margin:6px 0 0 22px}
-ol.do li{margin-bottom:9px;padding-left:4px;max-width:66ch}
+ol.do li{margin-bottom:9px;padding-left:4px}
 details{margin-top:10px}
 summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 pre.preview{font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;background:var(--bg);border:1px solid var(--rule);border-radius:4px;padding:10px;max-height:320px;overflow:auto;margin-top:8px}
 figure{margin:0}
 figure img{display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:6px;background:var(--card)}
-figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
+figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
 .kbd{font-family:var(--mono);font-size:12.5px;background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:0 5px}
 </style>
 </head>
@@ -114,23 +143,25 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
 
 <!-- ============================ STEP 1 ============================ -->
 <section class="page" id="page1" aria-labelledby="h1">
+  <p class="intro">This tool turns a simulation you describe in plain words into a working model that runs in your web browser, where you can step through it, compare settings and download the results, with the help of any AI assistant.</p>
   <h2 id="h1">Describe your model</h2>
-  <p class="lead">Answer the five questions below in writing, about three to five sentences each. Write for a smart colleague, not for a programmer. What you type is saved in this browser as you go.</p>
+  <p class="lead">Answer the five questions below in writing, about three to five sentences each. Write for a smart colleague, not for a programmer. Click a question to open it. What you type is saved in this browser as you go.</p>
 
   <div class="card soft">
     <h3>Role of computational simulations in organizational learning research</h3>
     <p>Unlike a formal (economic) model, simulations allow for the agents to update their beliefs with every period, and act differently in the next one. Consequently, the value of computational simulations is generally to explore organizational learning, as it allows us to simulate what happens when agents update their perception of the world and actions in it over time, based on the feedback they receive.</p>
-    <h3>Setting up a computational simulation of organizational learning</h3>
     <p style="margin-bottom:0">Accordingly, all computational simulations follow a fairly standard format, as described in Puranam et al. (2015). The five questions below follow it. Anything you leave out, the AI assistant will set to a usual value and tell you what it chose.</p>
   </div>
 
   <div class="card">
-    <label class="field" for="f-name" style="margin-top:0">Name of your model <span class="who">optional</span></label>
-    <input type="text" id="f-name" placeholder="for example: Project search with an AI advisor" autocomplete="off">
+    <div class="answer">
+      <label class="field" for="f-name">Name of your model <span class="who">optional</span></label>
+      <input type="text" id="f-name" placeholder="for example: Project search with an AI advisor" autocomplete="off">
+    </div>
   </div>
 
   <div class="card soft" id="ai-card">
-    <h3>Suggestion: include an AI agent</h3>
+    <h3>Classroom suggestion: include an AI agent</h3>
     <p>Your model can be any model of organizational learning. We suggest including AI as an agent (or several agents) alongside the human agents. Consider what type of organizational context AI is used in, and how each type of agent is likely to interact with the others. If you include one, the explorer can run your model with the AI and without it, and overlay the two.</p>
     <label class="toggle"><input type="checkbox" id="f-hasai"> <span>My model includes an AI agent. Show a second box under each question for the AI.</span></label>
     <div class="ai-only" style="margin-top:10px">
@@ -145,23 +176,29 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
     </div>
   </div>
 
+  <div class="tally"><b id="tally">0 of 5 questions answered</b><button type="button" class="linkbtn" id="btn-expand">Open all questions</button></div>
   <div id="stages"></div>
 
   <div class="card ai-only">
-    <label class="field" for="f-withoutai" style="margin-top:0">What “without AI” means</label>
-    <p class="small" style="margin-bottom:6px">Usually the same human agents doing the same task alone, with everything else unchanged. Say so, or say what differs.</p>
-    <textarea id="f-withoutai" rows="3" placeholder="The same human agents doing the same task alone, with everything else unchanged."></textarea>
+    <div class="answer">
+      <label class="field" for="f-withoutai">What “without AI” means</label>
+      <p class="small" style="margin-bottom:6px">Usually the same human agents doing the same task alone, with everything else unchanged. Say so, or say what differs.</p>
+      <textarea id="f-withoutai" rows="3" placeholder="The same human agents doing the same task alone, with everything else unchanged."></textarea>
+    </div>
   </div>
 
   <div class="card soft">
-    <h3>You do not need to say what to measure</h3>
-    <p style="margin-bottom:0">Every explorer shows the same things over time: the performance of the system (how well the agents are doing at the task, averaged over agents), and, where it applies, the heterogeneity of the agents (how different they are from one another). With an AI agent, the assistant may add one chart about the AI itself (how many follow it, how accurate it is).</p>
+    <h3>Outcome measures are automatically defined</h3>
+    <p>Every explorer shows the same things over time: the performance of the system (how well the agents are doing at the task, averaged over agents), and, where it applies, the heterogeneity of the agents (how different they are from one another). With an AI agent, the assistant may add one chart about the AI itself (how many follow it, how accurate it is).</p>
+    <p style="margin-bottom:0">These are a starting point, not a limit. If you want to measure something else, or something more, say so to the AI assistant in the chat, before or after it writes your model, and it will change the charts.</p>
   </div>
 
-  <div class="card">
-    <label class="field" for="f-expect" style="margin-top:0">What do you expect will happen, and why? <span class="who">optional</span></label>
-    <p class="small" style="margin-bottom:6px">This is not sent to the assistant, so it cannot shape the code. It is saved with your answers, so you can compare it with what you actually see.</p>
-    <textarea id="f-expect" rows="4"></textarea>
+  <div class="card stage" id="expect-card">
+    <button type="button" class="head" aria-expanded="false" aria-controls="expect-body"><span class="mark">?</span><span class="ttl"><b>What do you expect will happen, and why?</b><span>Optional. Not sent to the assistant.</span></span><span class="state"></span><span class="chev" aria-hidden="true">▶</span></button>
+    <div class="body" id="expect-body">
+      <p class="small">This is not sent to the assistant, so it cannot shape the code. It is saved with your answers, so you can compare it with what you actually see.</p>
+      <div class="answer"><label class="field" for="f-expect">Your expectation</label><textarea id="f-expect" rows="4"></textarea></div>
+    </div>
   </div>
 
   <div class="warnbox" id="warn1" role="status"></div>
@@ -219,7 +256,7 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
     <h3>3. Run it in the explorer</h3>
     <ol class="do">
       <li>Open the <a href="https://carolynjfu.com/sim-explorer/" target="_blank" rel="noopener">online explorer</a>. It starts with the built-in example.</li>
-      <li>Press <b>Load model</b> in the top-right corner, paste the code into the box that opens, and press <b>Load pasted code</b> under it. If the assistant gave you a file instead, press <b>Choose model.js file</b>.</li>
+      <li>Press the green <b>Load your own model</b> button in the top-right corner, paste the code into the box that opens, and press <b>Load pasted code</b> under it. If the assistant gave you a file instead, press <b>Choose model.js file</b>.</li>
       <li>Look at the top-right corner. <span class="kbd">self-check: passed ✓</span> means your model is running. If it says <span class="kbd">failed ✗</span>, click it, press “Copy report”, paste the report back to the assistant with the words “please fix this”, and load the new version the same way.</li>
     </ol>
     <p class="small" style="margin:10px 0 0">Your model runs only in your browser; nobody else sees it, and the page shows everyone else the example. Your browser remembers your model until you press “Use built-in model” or clear its data.</p>
@@ -268,7 +305,7 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:72ch}
 // The five stages: the guidelines' wording, with a "Be specific where you can" line under each.
 const STAGES = [
   { key:'task', short:'Task environment', title:'Define the task environment',
-    q:"What's the nature of the task agents have to accomplish? Is it to find the best choice on a multi-armed bandit (e.g. Denrell & March, 2001)? Is it to find the highest peak on the landscape (e.g. Levinthal 1997)? Is it to coordinate on taking the same action (e.g. Kocak et al. 2023)? How many agents are tackling this problem, and are they of different types (e.g. manager vs. employee)?",
+    q:"What's the nature of the task agents have to accomplish? Is it to find the best choice on a multi-armed bandit (e.g. Denrell & March, 2001)? Is it to find the highest peak on the landscape (e.g. Levinthal 1997)? Is it to coordinate on taking the same action (e.g. Kocak et al. 2023)? How many agents are tackling this problem, and are they of different types (e.g. manager vs. employee, March 1991)?",
     hint:"how many agents, and how many of each type; how many options or choices there are (for a landscape, the number of choices N and how strongly they interact, K; for a bandit, the number of arms); whether the task changes during a run." },
   { key:'representation', short:'Representation of the task', title:'Define their representation of the task',
     q:"What can agents see of the overall task, that impacts how they solve it? Do they explore around a baseline solution that their manager gives them (e.g. March 1991)? Do they explore relative to what their neighbors in their department of the organization know (e.g. Fang et al. 2010)? Do they only see a portion of all the possible actions the firm can do (e.g. Rivkin & Siggelkow, 2003)?",
@@ -287,23 +324,59 @@ const STORE = 'sim-start-answers-v1';
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-// ---- build the stage cards ----
+// ---- build the stage cards (collapsed; click to open) ----
 const box = $('stages');
+function toggleCard(card, open){ const o = open == null ? !card.classList.contains('open') : open; card.classList.toggle('open', o); const h = card.querySelector('.head'); if (h) h.setAttribute('aria-expanded', String(o)); }
 STAGES.forEach((st, i) => {
-  const c = document.createElement('div'); c.className = 'card stage';
-  c.innerHTML = `<div class="num">Question ${i+1} of 5</div>
-    <h3>${i+1}. ${st.title}</h3>
-    <p class="q">${esc(st.q)}</p>
-    <p class="hint"><b>Be specific where you can:</b> ${esc(st.hint)}</p>
-    <label class="field" for="f-${st.key}"><span class="no-ai">Your answer</span><span class="ai-only">The human agents</span></label>
-    <textarea id="f-${st.key}" rows="5"></textarea>
-    <div class="ai-only"><label class="field" for="f-${st.key}-ai">The AI agent(s) <span class="who">same question, for the AI</span></label>
-    <textarea id="f-${st.key}-ai" rows="4"></textarea></div>`;
+  const c = document.createElement('div'); c.className = 'card stage'; c.id = 'stage-' + st.key;
+  c.innerHTML = `<button type="button" class="head" aria-expanded="false" aria-controls="body-${st.key}">
+      <span class="mark" aria-hidden="true">${i+1}</span>
+      <span class="ttl"><b>${i+1}. ${st.title}</b><span class="preview-line"></span></span>
+      <span class="state">not answered yet</span><span class="chev" aria-hidden="true">▶</span></button>
+    <div class="body" id="body-${st.key}">
+      <p class="q">${esc(st.q)}</p>
+      <p class="hint"><b>Be specific where you can:</b> ${esc(st.hint)}</p>
+      <div class="answer">
+        <label class="field" for="f-${st.key}"><span class="no-ai">Your answer</span><span class="ai-only">The human agents</span></label>
+        <textarea id="f-${st.key}" rows="5"></textarea>
+        <div class="ai-only"><label class="field" for="f-${st.key}-ai">The AI agent(s) <span class="who">same question, for the AI</span></label>
+        <textarea id="f-${st.key}-ai" rows="4"></textarea></div>
+      </div>
+      <div class="next">${i < STAGES.length - 1 ? `<button type="button" class="btn" data-next="${i}">Next question →</button>` : `<button type="button" class="btn" data-next="${i}">Done with the questions</button>`}</div>
+    </div>`;
   box.appendChild(c);
 });
-const r6 = document.createElement('p'); r6.className = 'small'; r6.style.margin = '-4px 0 16px';
-r6.textContent = '6. Repeat accordingly: every period the agents act, receive feedback and update, then act again.';
-box.appendChild(r6);
+const c6 = document.createElement('div'); c6.className = 'card stage fixed';
+c6.innerHTML = `<div class="head"><span class="mark" aria-hidden="true">6</span><span class="ttl"><b>6. Repeat accordingly</b><span>Every period the agents act, receive feedback and update, then act again. Nothing to fill in here.</span></span></div>`;
+box.appendChild(c6);
+document.querySelectorAll('#page1 .stage .head').forEach(h => { if (h.tagName === 'BUTTON') h.addEventListener('click', () => toggleCard(h.closest('.stage'))); });
+box.addEventListener('click', e => {
+  const b = e.target.closest('[data-next]'); if (!b) return;
+  const i = +b.dataset.next; toggleCard($('stage-' + STAGES[i].key), false);
+  const nxt = STAGES[i+1] ? $('stage-' + STAGES[i+1].key) : null;
+  if (nxt){ toggleCard(nxt, true); nxt.scrollIntoView({ block:'start', behavior:'smooth' }); setTimeout(() => $('f-' + STAGES[i+1].key).focus({ preventScroll:true }), 300); }
+  else $('stage-' + STAGES[i].key).scrollIntoView({ block:'center', behavior:'smooth' });
+});
+function isAnswered(a, st){ return !!a[st.key].trim() && (!a.hasai || !!a[st.key + '-ai'].trim()); }
+function updateStatus(){
+  const a = read(); let n = 0;
+  STAGES.forEach((st, i) => {
+    const c = $('stage-' + st.key); const ok = isAnswered(a, st); if (ok) n++;
+    const half = !ok && (a[st.key].trim() || a[st.key + '-ai'].trim());
+    c.classList.toggle('answered', ok);
+    c.querySelector('.mark').textContent = ok ? '✓' : String(i+1);
+    c.querySelector('.state').textContent = ok ? 'answered' : (half ? 'half answered' : 'not answered yet');
+    const txt = (a[st.key].trim() || a[st.key + '-ai'].trim()).replace(/\s+/g, ' ');
+    c.querySelector('.preview-line').textContent = txt ? '“' + (txt.length > 110 ? txt.slice(0, 109) + '…' : txt) + '”' : '';
+  });
+  $('tally').textContent = `${n} of 5 questions answered`;
+  const ec = $('expect-card'); const has = !!a.expect.trim();
+  ec.classList.toggle('answered', has); ec.querySelector('.mark').textContent = has ? '✓' : '?'; ec.querySelector('.state').textContent = has ? 'written' : '';
+}
+$('btn-expand').addEventListener('click', () => {
+  const cards = STAGES.map(st => $('stage-' + st.key)); const anyClosed = cards.some(c => !c.classList.contains('open'));
+  cards.forEach(c => toggleCard(c, anyClosed)); $('btn-expand').textContent = anyClosed ? 'Close all questions' : 'Open all questions';
+});
 
 // ---- save and restore ----
 const FIELDS = ['name','hasai','withoutai','expect', ...STAGES.flatMap(s => [s.key, s.key + '-ai'])];
@@ -314,8 +387,8 @@ function restore(){
   if (a) for (const k of FIELDS){ const el = $('f-' + k); if (!el || !(k in a)) continue; if (el.type === 'checkbox') el.checked = !!a[k]; else el.value = a[k]; }
   aiMode();
 }
-function aiMode(){ document.body.classList.toggle('has-ai', $('f-hasai').checked); }
-document.addEventListener('input', e => { if (e.target.id && e.target.id.startsWith('f-')){ if (e.target.id === 'f-hasai') aiMode(); save(); $('warn1').classList.remove('on'); warned = false; } });
+function aiMode(){ document.body.classList.toggle('has-ai', $('f-hasai').checked); updateStatus(); }
+document.addEventListener('input', e => { if (e.target.id && e.target.id.startsWith('f-')){ if (e.target.id === 'f-hasai') aiMode(); save(); updateStatus(); $('warn1').classList.remove('on'); warned = false; } });
 $('btn-clear').addEventListener('click', () => {
   if (!confirm('Clear every answer on this page? This cannot be undone.')) return;
   for (const k of FIELDS){ const el = $('f-' + k); if (el.type === 'checkbox') el.checked = false; else el.value = ''; }
@@ -329,7 +402,7 @@ function answersMarkdown(a, forAssistant){
   L.push(a.hasai
     ? 'This model includes an AI agent. Each question is answered for the human agents and for the AI agent(s).'
     : 'This model has no AI agent. Do not add one, and leave `compare` out of the model.', '');
-  if (forAssistant) L.push('I will run the model in the online explorer: when you deliver, tell me to paste the code into "Load model" (top-right corner of the page), not to save it into a folder.', '');
+  if (forAssistant) L.push('I will run the model in the online explorer: when you deliver, tell me to paste the code into "Load your own model" (the green button in the top-right corner of the page), not to save it into a folder.', '');
   STAGES.forEach((st, i) => {
     L.push(`## ${i+1}. ${st.short}`, '');
     const h = a[st.key].trim(), ai = a[st.key + '-ai'].trim();
@@ -383,6 +456,7 @@ $('btn-next1').addEventListener('click', () => {
   if (miss.length && !warned){
     const w = $('warn1');
     w.innerHTML = `<b>${miss.length === 5 ? 'All five questions are' : miss.length === 1 ? 'One question is' : miss.length + ' questions are'} still empty or half answered:</b> ${miss.map(x => (x.i+1) + '. ' + x.s.short).join('; ')}. The assistant will choose usual values for anything missing and ask about the most important gaps. Press the button again to continue anyway.`;
+    miss.forEach(x => toggleCard($('stage-' + x.s.key), true));
     w.classList.add('on'); warned = true; return;
   }
   warned = false; go(2);
@@ -391,6 +465,7 @@ document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', 
 window.addEventListener('popstate', () => go(parseInt((location.hash.match(/step(\d)/) || [])[1]) || 1, false));
 
 restore();
+{ const a = read(); const first = STAGES.find(st => !isAnswered(a, st)); if (first) toggleCard($('stage-' + first.key), true); }
 go(parseInt((location.hash.match(/step(\d)/) || [])[1]) || 1, false);
 </script>
 </body>

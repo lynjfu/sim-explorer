@@ -2,7 +2,7 @@
 
 The explorer page (`index.html`) is generic. It loads one file, `model.js`, which must define one or more model objects and end with `const MODELS = [ ... ];`. Everything in `model.js` is plain JavaScript with no access to the page (no `document`, no `window`), so the same file can be checked headlessly.
 
-`model.js` is loaded in one of two ways: as a file next to `index.html` (`<script src="model.js">`), or pasted into the page's "Load model" box, in which case the page runs the code and reads `MODELS` from it. Both ways see the same helpers.
+`model.js` is loaded in one of two ways: as a file next to `index.html` (`<script src="model.js">`), or pasted into the page's "Load your own model" box, in which case the page runs the code and reads `MODELS` from it. Both ways see the same helpers.
 
 ## Helpers the page provides
 

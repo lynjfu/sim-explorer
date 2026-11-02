@@ -100,7 +100,7 @@ Follow `MODEL_CONTRACT.md` exactly. In addition:
 Give the student, in this order:
 
 1. The complete `model.js` in one code block, with nothing left to fill in.
-2. How to run it: save the code as `model.js` inside their downloaded copy of the sim-explorer folder, replacing the file of that name, and open `index.html` in a browser. (If they have no folder: open the explorer page their instructor linked, press the "Load model" button in the top-right corner of the page, paste the code into the box that opens, and press "Load pasted code" under it.) The page runs a self-check; if the "self-check" label in the top-right corner, beside "Load model", says "self-check: passed", the model is running. If it says "failed", they should open the report and paste it back to you with the words "please fix this".
+2. How to run it. If the student said they use the online explorer, or has no downloaded folder: open the explorer page, press the green "Load your own model" button in the top-right corner of the page, paste the code into the box that opens, and press "Load pasted code" under it. Otherwise: save the code as `model.js` inside their downloaded copy of the sim-explorer folder, replacing the file of that name, and open `index.html` in a browser. The page runs a self-check; if the "self-check" label in the top-right corner, beside "Load your own model", says "self-check: passed", the model is running. If it says "failed", they should open the report and paste it back to you with the words "please fix this".
 3. The assumption list: every `ASSUMED` slot, in plain words, with the citation after it if there is one.
 4. The `// CHOICE:` list: every place you decided something small, and the alternative.
 5. What to look at first: two or three concrete things to try in the page (which parameter to change, what Compare should show) that would show whether the AI makes a difference, and how (where the system ends up, or only how fast it gets there). With no AI agent: which parameter to change and what the student should see if the mechanism they described is at work. The student's own expectation is not part of what they send you.
@@ -130,7 +130,7 @@ Students are asked to refine their model this way after watching it run. Request
 
 The explorer page (`index.html`) is generic. It loads one file, `model.js`, which must define one or more model objects and end with `const MODELS = [ ... ];`. Everything in `model.js` is plain JavaScript with no access to the page (no `document`, no `window`), so the same file can be checked headlessly.
 
-`model.js` is loaded in one of two ways: as a file next to `index.html` (`<script src="model.js">`), or pasted into the page's "Load model" box, in which case the page runs the code and reads `MODELS` from it. Both ways see the same helpers.
+`model.js` is loaded in one of two ways: as a file next to `index.html` (`<script src="model.js">`), or pasted into the page's "Load your own model" box, in which case the page runs the code and reads `MODELS` from it. Both ways see the same helpers.
 
 ## Helpers the page provides
 
