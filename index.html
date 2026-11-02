@@ -517,6 +517,20 @@ const colorOf = name => tok(OI[name] || '--oi-black');
 const MARKER_WORD = { circle:'circles', triangle:'triangles', rect:'squares', rectRot:'diamonds', cross:'crosses', star:'stars' };
 const dashWord = d => !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : 'dashed');
 const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
+const shortLabel = (t, max = 34) => {
+  if (t.length <= max) return t;
+  const m = t.match(/^(.*?)( \([^()]{1,18}\))$/);
+  return m ? m[1].slice(0, max - m[2].length - 1).trimEnd() + '…' + m[2] : t.slice(0, max - 1) + '…';
+};
+// A legend sample of one series: a short stretch of its line with its dash pattern, and its marker (filled or hollow) in the middle.
+const legendSwatch = s => {
+  const w = 30, h = 12, cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('2d'), c = colorOf(s.color);
+  g.strokeStyle = c; g.lineWidth = 1.6; g.setLineDash(s.dash || []); g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke(); g.setLineDash([]);
+  g.fillStyle = s.hollow ? tok('--card') : c; g.lineWidth = 1.4;
+  Chart.helpers.drawPoint(g, { pointStyle: s.marker || 'circle', radius: 3.5, borderWidth: 1.4, rotation: 0 }, w / 2, h / 2);
+  return cv;
+};
 const $ = id => document.getElementById(id);
 const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;   // this page as loaded, for the Download zip
 const LINK_SERVICE = 'https://sim-links.carolynfu.workers.dev';   // links/worker.js, deployed on Cloudflare
@@ -688,7 +702,7 @@ const App = {
   // ---- charts ----
   mkDataset(s, T){
     const c = colorOf(s.color);
-    return { label: s.label, data: Array(T).fill(null), borderColor: c, borderWidth: 1.6, borderDash: s.dash || [],
+    return { _series: s, label: s.label, data: Array(T).fill(null), borderColor: c, borderWidth: 1.6, borderDash: s.dash || [],
       pointStyle: s.marker || 'circle', pointRadius: ctx => (ctx.dataIndex % Math.max(1, Math.round(T/12)) === 0) ? 3.5 : 0, pointHoverRadius: 4,
       pointBackgroundColor: s.hollow ? tok('--card') : c, pointBorderColor: c, pointBorderWidth: 1.4, tension: 0, spanGaps: true, fill: false };
   },
@@ -705,8 +719,9 @@ const App = {
     return new Chart(canvas.getContext('2d'), { type: 'line',
       data: { labels: categories || Array.from({length: T}, (_, i) => i + 1), datasets },
       options: { animation: false, responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, color: fg, font: { family: tok('--mono'), size: 10 }, filter: it => !datasets[it.datasetIndex].band,
-                     generateLabels: ch => Chart.defaults.plugins.legend.labels.generateLabels(ch).map(l => { const t = l.text || ''; return Object.assign(l, { text: t.length > 34 ? t.slice(0, 33) + '…' : t }); }) } },
+        plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, pointStyleWidth: 30, color: fg, font: { family: tok('--mono'), size: 10 }, filter: it => !datasets[it.datasetIndex].band,
+                     // each entry shows a sample of its line (dashes and marker), and a long label is shortened in the middle so an ending like "(without AI)" stays visible
+                     generateLabels: ch => Chart.defaults.plugins.legend.labels.generateLabels(ch).map(l => { const ds = datasets[l.datasetIndex]; return Object.assign(l, { text: shortLabel(l.text || ''), pointStyle: ds && ds._series ? legendSwatch(ds._series) : l.pointStyle }); }) } },
                    tooltip: { enabled: true, filter: it => !datasets[it.datasetIndex].band } },
         scales: { x: { type: categories ? 'category' : 'linear', min: categories ? undefined : 1, max: categories ? undefined : xMax, title: { display: true, text: xLabel, color: fg, font: { size: 10 } }, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 8 } },
                   y: { min: spec.yMin, max: spec.yMax, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 6 } } } } });
