@@ -798,7 +798,7 @@ const App = {
     for (let i = 0; i <= this.t; i++) this.model.stepPeriod(this.rng);
   },
   reset(autoplay){
-    this.stopPlay(); this.mode = 'single'; this.t = -1; this.clearLog();
+    this.stopPlay(); this.mode = 'single'; this.t = -1; this.clearLog(); $('sweep-area').classList.remove('on');   // back to the one row of charts
     if (this.chartSpec !== this.model.charts) this.buildCharts(this.model.charts);
     this.seedUsed = this.pickSeed();
     this.rng = makeRng(this.seedUsed);
@@ -836,7 +836,7 @@ const App = {
     setTimeout(() => {
       if (this.chartSpec !== this.model.charts) this.buildCharts(this.model.charts);
       const t0 = performance.now(); const B = runBatch(this.model, S, seed); const ms = Math.round(performance.now() - t0);
-      this.mode = `mean of ${S} runs ± 1 sd`; this.lastBatch = B; this.lastSweep = null;
+      this.mode = `mean of ${S} runs ± 1 sd`; this.lastBatch = B; this.lastSweep = null; $('sweep-area').classList.remove('on');
       this.clearCharts(); this.plotBatch(B); this.renderState(null); this.counter(); this.readout('');
       this.clearLog(); this.addLog(`batch: ${S} runs, base seed ${seed}, ${ms} ms · ${this.paramString()}`);
       for (const k of B.keys) this.addLog(`${k}: final-period mean ${fmt(final(B,k))} (sd ${fmt(B.sd[k][B.T-1])})`);
@@ -863,7 +863,7 @@ const App = {
       this.model.p[key] = saved;
       const ms = Math.round(performance.now() - t0);
       this.showCompare(Bon, Boff, onL, offL);
-      this.mode = `${onL} vs ${offL} · mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null;
+      this.mode = `${onL} vs ${offL} · mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null; $('sweep-area').classList.remove('on');
       this.renderState(null); this.counter(); this.readout('');
       this.clearLog(); this.addLog(`compare ${key}=${cmp.on} (${onL}) vs ${key}=${cmp.off} (${offL}): ${S} runs each, base seed ${seed}, ${ms} ms · other parameters ${this.paramString()}`);
       for (const k of Bon.keys) this.addLog(`${k}: final-period mean ${fmt(final(Bon,k))} ${onL} vs ${fmt(final(Boff,k))} ${offL} (difference ${fmt(final(Bon,k) - final(Boff,k))})`);
@@ -994,7 +994,7 @@ const App = {
     // charts: draw the mean ± 1 sd on the page, as Batch or Compare would, then save each canvas
     if (cmp) this.showCompare(Bs[0], Bs[1], conds[0].label, conds[1].label);
     else { this.buildCharts(m.charts); this.plotBatch(Bs[0]); }
-    this.mode = (cmp ? `${conds[0].label} vs ${conds[1].label} · ` : '') + `mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null;
+    this.mode = (cmp ? `${conds[0].label} vs ${conds[1].label} · ` : '') + `mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null; $('sweep-area').classList.remove('on');
     this.renderState(null); this.counter(); this.readout('');
     this.clearLog(); this.addLog(`download: ${S} runs${cmp ? ' per setting' : ''}, base seed ${seed} · ${this.paramString()}`);
     for (const k of Bs[0].keys) if (m.charts.some(c => c.series.some(x => x.key === k))) this.addLog(cmp ? `${k}: final-period mean ${fmt(final(Bs[0],k))} ${conds[0].label} vs ${fmt(final(Bs[1],k))} ${conds[1].label}` : `${k}: final-period mean ${fmt(final(Bs[0],k))} (sd ${fmt(Bs[0].sd[k][T-1])})`);
