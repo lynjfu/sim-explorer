@@ -20,3 +20,10 @@ HDR
   printf '```\n\n---\n\n# The student'"'"'s answers follow\n\n'
 } > "$OUT"
 echo "wrote $OUT ($(wc -c < "$OUT") bytes)"
+# The start page (start/index.html) needs the same prompt without the first comment line, as a script it can load from a local folder too.
+python3 - "$OUT" "$DIR/start/prompt.js" <<'PY'
+import json, sys
+body = open(sys.argv[1], encoding='utf-8').read().split('\n', 2)[2]
+open(sys.argv[2], 'w', encoding='utf-8').write('// Built by scripts/build_prompt.sh from 2_PROMPT.md. Do not edit by hand.\nwindow.PROMPT_BODY = ' + json.dumps(body, ensure_ascii=False) + ';\n')
+PY
+echo "wrote $DIR/start/prompt.js"

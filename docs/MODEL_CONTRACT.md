@@ -35,7 +35,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 | `howToRead` | string[] | Optional. One to three sentences on what to look for across the whole model. Shown as hover text (and on click) behind an ⓘ beside the Model heading, not as a block of text. The page writes each chart's line encodings itself under the chart, so do not repeat those. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |
-| `compare` | object | Optional. `{ key, on, off, labelOn, labelOff }`: the parameter and the two values the Compare button overlays (for this assignment: the AI on/off switch). |
+| `compare` | object | Optional. `{ key, on, off, labelOn, labelOff }`: the parameter and the two values the Compare button overlays: the AI on/off switch. Declare it only when the model has an AI agent; without it the page hides the Compare button. |
 | `charts` | object[] | Chart definitions, below. |
 | `state` | object | `{ title, render }`. `render: null` uses the default strip (needs `bitShare` in the record); or a function `(el, rec, model)` that fills the strip element with DOM. |
 | `checks` | object[] | Optional but expected. Sanity checks, below. |
@@ -120,7 +120,7 @@ One row, about 96px high. Show a status with a text mark or a shape as well as a
 - **A few options with uncertain payoffs (bandit).** True means in `this.q`; beliefs per agent `this.b[j]` over options; choose `sampleCategorical(rng, softmax(this.b[j], p.tau))`; result `q[arm] + sd*randn(rng)`; update `b[j][arm] = (1-p.phi)*b[j][arm] + p.phi*result`.
 - **Beliefs copied from an organisational code or from colleagues (mutual learning).** Keep a belief vector per agent and one for the code; each round, each agent adopts each code entry with probability p1 where they differ; the code adopts the majority of the better-performing agents with probability p2.
 - **Something permanent (absorbing).** Keep an `alive` array; record `share_alive` every round; once the condition fires, freeze.
-- **An AI agent.** Treat it as an agent type with its own representation (what it sees), its own rule, and its own error; give humans a rule for responding to it. Put the on/off switch in `params` and `compare`.
+- **An AI agent.** Treat it as an agent type with its own representation (what it sees), its own rule, and its own error; give humans a rule for responding to it. Put the on/off switch in `params` and `compare`. A model without an AI agent has neither.
 - **Two versions side by side.** Add a second model object and list both in `MODELS`; the page shows tabs.
 
 ## Performance budget

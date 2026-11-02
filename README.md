@@ -4,6 +4,8 @@
 
 This repository turns a simulation you have described in words into a model you can watch run, change and compare, in your browser, using whichever AI assistant you already use (Claude, ChatGPT, Gemini or another). You answer the questions in plain language; the assistant writes one small file; a fixed web page runs it, checks it and shows it. The page is the same for everyone. The model inside it is yours.
 
+**Or use the guided version:** https://carolynjfu.com/sim-explorer/start/ asks the same questions on one page (with an AI agent as a suggestion, not a requirement), hands you one prompt file with your answers already in it, and walks you through the rest. It produces the same `model.js` for the same page.
+
 ## The steps
 
 1. **Download this folder.** Press the green **Code** button above, then **Download ZIP**, and unzip it. Everything below happens in that folder.
@@ -12,6 +14,7 @@ This repository turns a simulation you have described in words into a model you 
 4. **Answer its questions.** It will ask about anything you left unclear, in plain words, at most six questions, then show you a short table of what it understood. Correct anything wrong. Then it writes `model.js`.
 5. **Run it.** Save the code as `model.js` in your folder, replacing the file of that name, and open `index.html` in your browser. The page checks the code and says "self-check: passed" at the top right if it runs correctly. If it says "failed", click it, copy the report, and paste it back to the assistant with "please fix this". The first open needs an internet connection, for the chart library.
 6. **Explore.** Change parameters and watch. Press **Compare** to see with and without the AI. Compare what you expected (question 7 of the assignment) with what you see.
+7. **Save your results.** **Download zip**, in the top-right corner, runs the model as many times as you choose at the current settings and saves the code, the page, every run's numbers, the averages, the charts as images and the settings in one zip.
 
 Your model lives in your folder as `model.js`. Keep that file; it is what you hand in. Nothing leaves your computer.
 
@@ -33,13 +36,14 @@ Your model's parameters on the left. On the right: Step through one run a round 
 | `model.js` | The built-in example model (people searching for a good project with an AI advisor). Yours replaces it. |
 | `examples/ai-advisor/` | That example end to end: the written answers, the `model.js`, and the assumption list that came with it. |
 | `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` | What the assistant does and what `model.js` must contain. For the assistant; you do not need to read them. |
+| `start/` | The guided version of the steps (a web page). Its prompt file is built from `2_PROMPT.md`; `example.gif` shows the example model running. |
 | `scripts/` | For instructors and maintainers, below. |
 
 ## For instructors
 
 - **Hosting.** The example is served from GitHub Pages at the link above; students work from a downloaded copy so each sees their own model. A fork works the same way: switch on Pages for the fork and the link becomes `https://<user>.github.io/sim-explorer/` (or the fork owner's custom domain).
 - **Reading a student's model.** Open the page, press **Load model** (top right), paste their `model.js`, press **Load pasted code**. Their `about` text, assumption list and checks are in the file. The self-check tells you at once whether it runs, whether a seed reproduces, and whether their own sanity checks pass.
-- **Rebuilding the prompt.** `scripts/build_prompt.sh` writes `2_PROMPT.md` from `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` and `model.js`. Run it after editing any of them.
+- **Rebuilding the prompt.** `scripts/build_prompt.sh` writes `2_PROMPT.md` from `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` and `model.js`. Run it after editing any of them. It also writes `start/prompt.js`, the same prompt for the guided page.
 - **Checking a model headlessly.** `scripts/smoke_test.sh path/to/model.js` runs the page's self-check from the command line (needs `node`, or the `jsc` that ships with macOS).
 - **One-file copy.** `scripts/inline_model.sh [model.js] out.html` puts the model inside the page, for emailing or publishing as a single file.
 - **Claude Code.** The folder carries a skill at `.claude/skills/sim-explorer/`; in Claude Code (terminal or web) a student can open the folder and say "build my model from my answers". `scripts/install_skill.sh` installs the same skill user-wide.

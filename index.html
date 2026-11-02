@@ -84,6 +84,8 @@ textarea{width:100%;min-height:90px;font-family:var(--sans);font-size:12.5px;bac
 .box pre{font-family:var(--mono);font-size:11px;white-space:pre-wrap;color:var(--fg);line-height:1.5}
 .box pre .fail{color:var(--warn);font-weight:500}
 label.ctl input[type=file]{display:none}
+.box .row.off,.box label.off{display:none}
+.box select{width:auto;padding:4px 6px}
 
 /* Controls bar */
 #controls{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap;flex-shrink:0;background:var(--bg)}
@@ -142,6 +144,7 @@ label.ctl input[type=file]{display:none}
   <button class="chip" id="chip-source" title="Which model code is running">model: …</button>
   <button class="chip" id="chip-check" title="Show the self-check report">self-check: …</button>
   <button class="chip" id="chip-load" title="Paste or choose a model.js">Load model</button>
+  <button class="chip" id="chip-dl" title="Download a zip with the model code, this page, and the results of many runs at the current settings">Download zip</button>
 </div>
 
 <div id="main">
@@ -168,6 +171,16 @@ label.ctl input[type=file]{display:none}
       <p>Run automatically when a model loads. A failing line is something to paste back to your AI assistant, together with the question “please fix this”.</p>
       <pre id="check-text"></pre>
       <div class="row"><button class="ctl" id="btn-copy-check">Copy report</button><button class="ctl" id="btn-rerun-check">Run again</button><span id="check-msg"></span></div>
+    </div>
+    <div id="dlbox" class="box off">
+      <div class="ttl">Download code and results</div>
+      <p>Runs the model many times at the parameters set on the left and saves everything in one zip: the model code and this page (unzip and open <code>index.html</code> to run it again), every run period by period, the mean and spread per period, each run's final values, the charts as images, the settings and seed, and your notes. Nothing is uploaded; the zip is made in your browser. A number typed in the seed box is used as the base seed; otherwise a new one is drawn and recorded.</p>
+      <div class="row">
+        <label for="dl-runs">Number of runs</label><select id="dl-runs" aria-label="number of runs"></select>
+        <label id="dl-cmp-wrap" class="off"><input type="checkbox" id="dl-cmp" checked> <span id="dl-cmp-label"></span></label>
+      </div>
+      <div class="row off" id="dl-code-row"><span>This browser cannot read <code>model.js</code> from a folder on your computer by itself. To include the code, choose the file:</span><label class="ctl">Choose model.js <input type="file" id="dl-code-file" accept=".js,.txt"></label><span id="dl-code-msg"></span></div>
+      <div class="row"><button class="ctl primary" id="btn-dl">Make zip</button><span id="dl-msg"></span></div>
     </div>
 
     <div id="controls">
@@ -284,6 +297,64 @@ function runBatch(model, S, seed){
   return out;
 }
 
+// Per-run records for the Download zip: runs s0..s1-1 with the same seeds as runBatch, so their mean and sd equal a Batch with
+// the same base seed and run count. Records every chart series plus any other numeric field of the step record.
+function recordKeys(model, rec){
+  const keys = model.charts.flatMap(c => c.series.map(s => s.key));
+  for (const k in rec) if (!keys.includes(k) && k !== 't' && typeof rec[k] === 'number') keys.push(k);
+  return keys;
+}
+function runRecords(model, s0, s1, seed, keys, out){
+  const T = model.T;
+  for (let s = s0; s < s1; s++){
+    const rng = makeRng((seed + s * 7919) >>> 0);
+    model.generateEnvironment(rng); model.initState(rng);
+    for (let t = 0; t < T; t++){
+      const rec = model.stepPeriod(rng);
+      for (const k of keys){ const v = rec[k]; out[k][s*T + t] = (v == null || typeof v !== 'number') ? NaN : v; }
+    }
+  }
+}
+function batchFromRecords(data, keys, S, T){
+  const out = { S, T, keys, mean:{}, sd:{} };
+  for (const k of keys){
+    out.mean[k] = []; out.sd[k] = [];
+    for (let t = 0; t < T; t++){
+      let sum = 0, sq = 0, n = 0;
+      for (let s = 0; s < S; s++){ const v = data[k][s*T + t]; if (!Number.isNaN(v)){ sum += v; sq += v*v; n++; } }
+      out.mean[k].push(n ? sum/n : null); out.sd[k].push(n > 1 ? Math.sqrt(Math.max(0, sq/n - (sum/n)**2)) : null);
+    }
+  }
+  return out;
+}
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+// files: [{ name: 'folder/file.csv', data: Uint8Array }]. Returns the zip as a list of Uint8Array parts (stored, not compressed).
+function zipParts(files, date){
+  const d = date || new Date(); const parts = [], central = []; let offset = 0;
+  const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const day = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const utf8 = str => { const b = []; for (const ch of unescape(encodeURIComponent(str))) b.push(ch.charCodeAt(0)); return new Uint8Array(b); };
+  for (const f of files){
+    const name = utf8(f.name), data = f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, time, true); h.setUint16(12, day, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true);
+    h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, time, true); c.setUint16(14, day, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+    c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), name);
+    offset += 30 + name.length + data.length;
+  }
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cdSize, true); e.setUint32(16, offset, true);
+  return parts.concat(central, [new Uint8Array(e.buffer)]);
+}
+
 // Self-check. Runs the same checks in the browser and in scripts/smoke_test.sh.
 // Returns { ok, failures, lines[] }. Lines beginning with "FAIL" are failures; "WARN" lines are advice.
 function runSelfCheck(models, opts){
@@ -398,7 +469,7 @@ function runSelfCheck(models, opts){
 <!-- The built-in model. A student's own model.js replaces this file, or is pasted through "Load model". -->
 <script src="model.js"></script>
 
-<script>
+<script id="chrome">
 'use strict';
 // ===================================================================
 // CHROME — loader, self-check, parameter panel, charts, controls, state strip, log, batch, compare, sweep.
@@ -412,6 +483,7 @@ const MARKER_WORD = { circle:'circles', triangle:'triangles', rect:'squares', re
 const dashWord = d => !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : 'dashed');
 const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
 const $ = id => document.getElementById(id);
+const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;   // this page as loaded, for the Download zip
 const STORE_CODE = 'explorer-model-code';
 const ABOUT_KEYS = [['task','Task environment'],['representation','Representation'],['actions','Actions'],['feedback','Feedback'],['transformation','Transformation']];
 const aboutHtml = ab => Array.isArray(ab) ? ab.map(p => `<p>${p}</p>`).join('') : ABOUT_KEYS.filter(([k]) => ab[k]).map(([k, lab]) => `<p><b>${lab}.</b> ${ab[k]}</p>`).join('');
@@ -443,6 +515,9 @@ const App = {
     $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); });
     $('btn-copy-check').addEventListener('click', () => this.copyText(this.check ? this.check.lines.join('\n') : '', null, null, 'check-msg', 'Report'));
     $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
+    $('chip-dl').addEventListener('click', () => { const b = $('dlbox'); b.classList.toggle('off'); if (!b.classList.contains('off')) this.prepareDownload(); });
+    $('btn-dl').addEventListener('click', () => this.download());
+    $('dl-code-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { this.codeText = txt; $('dl-code-msg').textContent = `${f.name} will be included.`; }); });
     // which model runs: a saved pasted model wins; else model.js; else ask
     let saved = null; try { saved = localStorage.getItem(STORE_CODE); } catch(e){}
     if (saved){ $('model-code').value = saved; if (!this.loadCode(saved, 'pasted model (saved in this browser)', false)) this.useBuiltin(false); }
@@ -450,7 +525,7 @@ const App = {
   },
 
   useBuiltin(say){
-    if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.boot(MODELS, 'built-in model.js'); if (say) this.loadMsg('Using the built-in model.js.'); }
+    if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.codeText = null; this.boot(MODELS, 'built-in model.js'); if (say) this.loadMsg('Using the built-in model.js.'); }
     else { $('loader').classList.remove('off'); $('chip-source').textContent = 'model: none'; $('chip-check').textContent = 'self-check: —'; this.loadMsg('No model.js was found next to this page. Paste one above.'); }
   },
   loadMsg(s, bad){ const el = $('load-msg'); el.textContent = s; el.style.color = bad ? 'var(--warn)' : ''; },
@@ -463,6 +538,7 @@ const App = {
     } catch (e){ this.loadMsg(`The code did not run: ${e.message}. Paste this message back to your AI assistant.`, true); return false; }
     if (!Array.isArray(models) || !models.length){ this.loadMsg('The code ran but did not define `const MODELS = [ ... ]` at the end.', true); return false; }
     if (remember){ try { localStorage.setItem(STORE_CODE, code); } catch(e){} }
+    this.codeText = code;
     this.boot(models, label); this.loadMsg(`Loaded ${models.length} model${models.length === 1 ? '' : 's'}: ${models.map(m => m.name).join(', ')}.`);
     return true;
   },
@@ -478,7 +554,7 @@ const App = {
     });
     this.selfCheck(false);
     if (this.check.ok || this.check.failures === 0) this.switchModel(models[0].id);
-    else { $('checkbox').classList.remove('off'); $('charts').innerHTML = ''; $('title-el').textContent = 'Explorer'; $('about-body').innerHTML = ''; $('howto-body').innerHTML = ''; $('params').innerHTML = ''; }
+    else { $('checkbox').classList.remove('off'); $('charts').innerHTML = ''; $('title-el').textContent = 'Explorer'; $('about-body').innerHTML = ''; $('params').innerHTML = ''; }
   },
   selfCheck(show){
     const chip = $('chip-check'); chip.textContent = 'self-check: running…';
@@ -499,7 +575,7 @@ const App = {
     $('title-el').textContent = this.model.name; document.title = this.model.name;
     this.model.p = {}; for (const d of this.model.params) this.model.p[d.key] = d.default;
     this.buildLeft(); this.buildCharts(this.model.charts); this.buildSweepSelect();
-    const cmp = $('btn-compare'); if (this.model.compare){ const c = this.model.compare; cmp.classList.remove('off'); cmp.textContent = `Compare ${c.labelOn || 'on'} vs ${c.labelOff || 'off'}`; cmp.title = `Run the batch twice, with ${c.key} = ${c.on} (“${c.labelOn || 'on'}”: solid lines, filled markers) and ${c.key} = ${c.off} (“${c.labelOff || 'off'}”: same colours, dashed lines, hollow markers), drawn on the same charts.`; } else cmp.classList.add('off');
+    const cmp = $('btn-compare'); if (this.model.compare){ const c = this.model.compare; cmp.classList.remove('off'); cmp.textContent = `Compare ${c.labelOn || 'on'} vs ${c.labelOff || 'off'}`; cmp.title = `Run the batch twice, with ${c.key} = ${c.on} (“${c.labelOn || 'on'}”: solid lines, filled markers) and ${c.key} = ${c.off} (“${c.labelOff || 'off'}”: same colours, hollow markers, and a different line: solid becomes dashed, dashed becomes dotted, dotted becomes dashed), drawn on the same charts.`; } else cmp.classList.add('off');
     $('sweep-area').classList.remove('on');
     this.reset(true);
   },
@@ -692,14 +768,7 @@ const App = {
       this.model.p[key] = cmp.off; const Boff = runBatch(this.model, S, seed);
       this.model.p[key] = saved;
       const ms = Math.round(performance.now() - t0);
-      // derived chart spec: each series twice; "off" is dashed (dotted if the original is dashed) with hollow markers
-      const spec = this.model.charts.map(c => ({ id: c.id, title: c.title, yMin: c.yMin, yMax: c.yMax, series: c.series.flatMap(s => [
-        Object.assign({}, s, { key: s.key + '__on',  label: `${s.label} (${onL})` }),
-        Object.assign({}, s, { key: s.key + '__off', label: `${s.label} (${offL})`, dash: (s.dash && s.dash.length) ? [2,3] : [6,3], hollow: true }),
-      ]) }));
-      this.buildCharts(spec);
-      const lookup = {}; for (const k of Bon.keys){ lookup[k + '__on'] = { B: Bon, key: k }; lookup[k + '__off'] = { B: Boff, key: k }; }
-      this.plotBatch(lookup, spec, s => s.key);
+      this.showCompare(Bon, Boff, onL, offL);
       this.mode = `${onL} vs ${offL} · mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null;
       this.renderState(null); this.counter(); this.readout('');
       this.clearLog(); this.addLog(`compare ${key}=${cmp.on} (${onL}) vs ${key}=${cmp.off} (${offL}): ${S} runs each, base seed ${seed}, ${ms} ms · other parameters ${this.paramString()}`);
@@ -708,6 +777,162 @@ const App = {
       for (let t = 0; t < Bon.T; t++) rows.push([t+1].concat(Bon.keys.flatMap(k => [fmt(Bon.mean[k][t],5), fmt(Bon.sd[k][t],5), fmt(Boff.mean[k][t],5), fmt(Boff.sd[k][t],5)])).join(','));
       this.csv = rows.join('\n'); $('btn-csv').disabled = false;
     }, 10);
+  },
+
+  // derived chart spec: each series twice; "off" has hollow markers and a different line: solid → dashed, dashed → dotted, dotted → dashed
+  showCompare(Bon, Boff, onL, offL){
+    const offDash = d => (!d || !d.length) ? [6,3] : (d[0] <= 2 ? [6,3] : [2,3]);
+    const spec = this.model.charts.map(c => ({ id: c.id, title: c.title, yMin: c.yMin, yMax: c.yMax, series: c.series.flatMap(s => [
+      Object.assign({}, s, { key: s.key + '__on',  label: `${s.label} (${onL})` }),
+      Object.assign({}, s, { key: s.key + '__off', label: `${s.label} (${offL})`, dash: offDash(s.dash), hollow: true }),
+    ]) }));
+    this.buildCharts(spec);
+    const lookup = {}; for (const k of Bon.keys){ lookup[k + '__on'] = { B: Bon, key: k }; lookup[k + '__off'] = { B: Boff, key: k }; }
+    this.plotBatch(lookup, spec, s => s.key);
+  },
+
+  // ---- download: code, page and results of many runs, as one zip ----
+  DL_OPTIONS: [10, 50, 100, 200, 500, 1000, 2000, 5000],
+  DL_MAX_SECONDS: 20, DL_MAX_ROWS: 400000,
+  prepareDownload(){
+    const m = this.model; if (!m){ $('dl-msg').textContent = 'Load a model first.'; return; }
+    const cmp = m.compare;
+    $('dl-cmp-wrap').classList.toggle('off', !cmp);
+    if (cmp) $('dl-cmp-label').textContent = `run every seed twice, ${cmp.labelOn || 'on'} and ${cmp.labelOff || 'off'} (${cmp.key} = ${cmp.on} / ${cmp.off}), as Compare does`;
+    // time a few runs, then cap the menu at what this computer does in about DL_MAX_SECONDS
+    const t0 = performance.now(); const probe = 5; runBatch(m, probe, 12345); const msPerRun = Math.max(0.05, (performance.now() - t0) / probe);
+    this.dlMsPerRun = msPerRun;
+    const conds = cmp ? 2 : 1; const sel = $('dl-runs'); const prev = parseInt(sel.value) || 200; sel.innerHTML = '';
+    let best = null;
+    for (const n of this.DL_OPTIONS){
+      const secs = n * conds * msPerRun / 1000, rows = n * conds * m.T; const ok = secs <= this.DL_MAX_SECONDS && rows <= this.DL_MAX_ROWS;
+      const o = document.createElement('option'); o.value = n; o.disabled = !ok;
+      o.textContent = `${n}` + (ok ? (secs < 1 ? ' (under a second)' : ` (about ${Math.ceil(secs)} s)`) : ' (too slow or too large here)');
+      sel.appendChild(o); if (ok && n <= prev) best = n;
+    }
+    if (best == null) best = 10; sel.value = best;
+    sel.title = `Capped at what this computer runs in about ${this.DL_MAX_SECONDS} seconds and at ${this.DL_MAX_ROWS.toLocaleString()} rows of per-run data (runs × periods${cmp ? ' × 2 settings' : ''}). Measured here: about ${msPerRun.toFixed(1)} ms per run.`;
+    // the model's code: pasted or chosen text, an inline model, or model.js next to the page (readable when served from a web address)
+    const row = $('dl-code-row'); row.classList.add('off');
+    if (this.codeText) return;
+    const inline = Array.from(document.scripts).find(sc => !sc.src && !sc.id && /const\s+MODELS\s*=/.test(sc.textContent));
+    if (inline){ this.codeText = inline.textContent.replace(/^\n/, ''); return; }
+    fetch('model.js', { cache: 'no-store' }).then(r => r.ok ? r.text() : Promise.reject(new Error('not found'))).then(txt => { this.codeText = txt; })
+      .catch(() => { row.classList.remove('off'); $('dl-code-msg').textContent = 'Without it the zip still has the results and the page, but not the model code.'; });
+  },
+  download(){
+    const m = this.model; if (!m) return;
+    this.stopLoop(); this.stopPlay();
+    const S = parseInt($('dl-runs').value) || 10; const seed = this.pickSeed(); const T = m.T;
+    const cmp = (m.compare && $('dl-cmp').checked) ? m.compare : null;
+    const conds = cmp ? [{ val: cmp.on, label: cmp.labelOn || 'on' }, { val: cmp.off, label: cmp.labelOff || 'off' }] : [{ val: null, label: null }];
+    const saved = cmp ? m.p[cmp.key] : null;
+    let keys;
+    { const rng = makeRng(seed); m.generateEnvironment(rng); m.initState(rng); keys = recordKeys(m, m.stepPeriod(rng)); }
+    const data = conds.map(() => { const o = {}; for (const k of keys) o[k] = new Float64Array(S * T); return o; });
+    const msg = $('dl-msg'); const btn = $('btn-dl'); btn.disabled = true;
+    const chunk = Math.max(1, Math.floor(200 / Math.max(0.05, this.dlMsPerRun || 1)));   // about 200 ms of work between screen updates
+    let ci = 0, s = 0; const t0 = performance.now();
+    const fail = e => { if (cmp) m.p[cmp.key] = saved; btn.disabled = false; msg.textContent = 'Could not make the zip: ' + e.message; };
+    const work = () => {
+      try {
+        if (cmp) m.p[cmp.key] = conds[ci].val;
+        const s1 = Math.min(S, s + chunk); runRecords(m, s, s1, seed, keys, data[ci]); s = s1;
+        if (cmp) m.p[cmp.key] = saved;
+      } catch (e){ fail(e); return; }
+      msg.textContent = `running… ${ci * S + s} / ${conds.length * S} runs`;
+      if (s >= S){ ci++; s = 0; }
+      if (ci < conds.length) setTimeout(work, 0);
+      else { const secs = (performance.now() - t0) / 1000; setTimeout(() => this.finishDownload(m, S, T, seed, keys, conds, data, cmp, secs).then(() => { btn.disabled = false; }, fail), 0); }
+    };
+    setTimeout(work, 0);
+  },
+  async finishDownload(m, S, T, seed, keys, conds, data, cmp, secs){
+    const msg = $('dl-msg'); msg.textContent = 'writing the zip…';
+    const now = new Date(); const pad = x => String(x).padStart(2, '0');
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const folder = `${String(m.id || 'model').replace(/[^A-Za-z0-9_-]+/g, '_')}_${stamp}`;
+    const num = v => Number.isNaN(v) ? '' : (Number.isInteger(v) ? String(v) : String(+v.toPrecision(6)));
+    const stat = v => v == null ? '' : String(+v.toPrecision(6));
+    const condCol = cmp ? 'condition,' : '';
+    const runSeed = s => (seed + s * 7919) >>> 0;
+    const Bs = conds.map((c, i) => batchFromRecords(data[i], keys, S, T));
+    const runs = [condCol + 'run,seed,period,' + keys.join(',')];
+    conds.forEach((c, i) => { for (let s = 0; s < S; s++) for (let t = 0; t < T; t++) runs.push((cmp ? c.label + ',' : '') + (s+1) + ',' + runSeed(s) + ',' + (t+1) + ',' + keys.map(k => num(data[i][k][s*T + t])).join(',')); });
+    const summ = [condCol + 'period,' + keys.flatMap(k => [k + '_mean', k + '_sd']).join(',')];
+    conds.forEach((c, i) => { const B = Bs[i]; for (let t = 0; t < T; t++) summ.push((cmp ? c.label + ',' : '') + (t+1) + ',' + keys.flatMap(k => [stat(B.mean[k][t]), stat(B.sd[k][t])]).join(',')); });
+    const fin = [condCol + 'run,seed,' + keys.join(',')];
+    conds.forEach((c, i) => { for (let s = 0; s < S; s++) fin.push((cmp ? c.label + ',' : '') + (s+1) + ',' + runSeed(s) + ',' + keys.map(k => num(data[i][k][s*T + T - 1])).join(',')); });
+    const params = {}; for (const d of m.params) params[d.key] = m.p[d.key];
+    const settings = { model: m.name || m.id, model_id: m.id, made: now.toISOString(), page: location.href.split('#')[0], code_source: $('chip-source').textContent.replace(/^model: /, ''),
+      runs_per_setting: S, periods: T, base_seed: seed, run_seed_rule: 'run r (counting from 1) uses seed (base_seed + (r - 1) * 7919) mod 2^32',
+      parameters: params, compared: cmp ? { parameter: cmp.key, settings: conds.map(c => ({ label: c.label, value: c.val })) } : null, seconds_to_run: Math.round(secs * 10) / 10 };
+    // charts: draw the mean ± 1 sd on the page, as Batch or Compare would, then save each canvas
+    if (cmp) this.showCompare(Bs[0], Bs[1], conds[0].label, conds[1].label);
+    else { this.buildCharts(m.charts); this.plotBatch(Bs[0]); }
+    this.mode = (cmp ? `${conds[0].label} vs ${conds[1].label} · ` : '') + `mean of ${S} runs ± 1 sd`; this.lastBatch = null; this.lastSweep = null;
+    this.renderState(null); this.counter(); this.readout('');
+    this.clearLog(); this.addLog(`download: ${S} runs${cmp ? ' per setting' : ''}, base seed ${seed} · ${this.paramString()}`);
+    for (const k of Bs[0].keys) if (m.charts.some(c => c.series.some(x => x.key === k))) this.addLog(cmp ? `${k}: final-period mean ${fmt(final(Bs[0],k))} ${conds[0].label} vs ${fmt(final(Bs[1],k))} ${conds[1].label}` : `${k}: final-period mean ${fmt(final(Bs[0],k))} (sd ${fmt(Bs[0].sd[k][T-1])})`);
+    await new Promise(r => setTimeout(r, 30));   // charts draw synchronously (animation off); a timeout, not an animation frame, so a background tab still finishes
+    const enc = new TextEncoder(); const files = []; const add = (name, text) => files.push({ name: folder + '/' + name, data: enc.encode(text) });
+    const chartWords = []; const pngs = [];
+    for (const c of this.chartSpec){
+      const cv = $('cv-' + c.id); if (!cv) continue;
+      const words = c.series.map(x => seriesWords(x).replace(/<[^>]+>/g, ''));
+      chartWords.push(`charts/${c.id}.png: ${c.title}. ${words.join('; ')}.`);
+      pngs.push({ name: `${folder}/charts/${c.id}.png`, data: await this.chartPng(cv, c.title, `How to read: ${words.join(' · ')}. Each line is the mean over ${S} runs; the shaded band is ± 1 standard deviation.`) });
+    }
+    const code = this.codeText;
+    const readme = [
+      `${m.name || m.id}: code and results`, '',
+      `Made ${now.toString()}`, `from ${settings.page}`,
+      `${S} runs` + (cmp ? ` with ${cmp.key} = ${cmp.on} ("${conds[0].label}") and the same ${S} seeds with ${cmp.key} = ${cmp.off} ("${conds[1].label}")` : '') + `, ${T} periods each, base seed ${seed}.`,
+      `Parameters: ${this.paramString()}`, '',
+      'Files',
+      code ? '  model.js       the model code that produced these results' : '  (model.js is not included: the browser could not read it. It is the model.js in your folder.)',
+      '  index.html     the explorer page. With model.js next to it, open index.html to run the model again (the charts need an internet connection).',
+      `  runs.csv       one row per run per period${cmp ? ' per setting' : ''} (${S * T * conds.length} rows). Columns: ${cmp ? 'condition, ' : ''}run, seed, period, then every number the model records each period.`,
+      `  summary.csv    mean and standard deviation across runs, per period${cmp ? ' and setting' : ''}. The same numbers as ${cmp ? 'Compare' : 'Batch'} on the page with this seed and number of runs.`,
+      '  final.csv      each run\'s values in the last period.',
+      '  settings.json  parameters, seeds and run counts, for reproducing these numbers.',
+      '  notes.txt      the Notes box from the page.',
+      '  charts/        the charts as images:',
+      ...chartWords.map(w => '                   ' + w),
+      cmp ? `                 In every chart each quantity appears twice: "${conds[0].label}" as the model draws it, "${conds[1].label}" in the same colour with hollow markers and a different line (solid becomes dashed, dashed becomes dotted, dotted becomes dashed).` : '',
+      '', `To reproduce: set the same parameters on the page, type ${seed} into the seed box, put ${S} in the runs box and press ${cmp ? 'Compare' : 'Batch'}.`, ''
+    ].join('\n');
+    add('README.txt', readme);
+    if (code) add('model.js', code);
+    add('index.html', PAGE_SOURCE);
+    add('runs.csv', runs.join('\n') + '\n'); add('summary.csv', summ.join('\n') + '\n'); add('final.csv', fin.join('\n') + '\n');
+    add('settings.json', JSON.stringify(settings, null, 2) + '\n');
+    add('notes.txt', ($('notes').value || '') + '\n');
+    files.push(...pngs);
+    const blob = new Blob(zipParts(files, now), { type: 'application/zip' });
+    this.saveBlob(blob, folder + '.zip');
+    msg.textContent = `Saved ${folder}.zip (${(blob.size / 1e6).toFixed(1)} MB; ${S * conds.length} runs in ${secs.toFixed(1)} s).` + (code ? '' : ' The model code is not in it; see above.');
+  },
+  chartPng(canvas, title, footer){
+    const scale = (canvas.width / canvas.clientWidth) || 1, pad = 14 * scale, w = canvas.width + 2 * pad;
+    const fs = 12 * scale, measure = document.createElement('canvas').getContext('2d');
+    measure.font = `${fs}px ${tok('--sans')}`;
+    const lines = []; let cur = '';
+    for (const word of footer.split(' ')){ const next = cur ? cur + ' ' + word : word; if (cur && measure.measureText(next).width > w - 2 * pad){ lines.push(cur); cur = word; } else cur = next; }
+    if (cur) lines.push(cur);
+    const head = 30 * scale, foot = (lines.length * 16 + 12) * scale;
+    const out = document.createElement('canvas'); out.width = w; out.height = canvas.height + head + foot;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = tok('--card'); ctx.fillRect(0, 0, out.width, out.height);
+    ctx.fillStyle = tok('--fg'); ctx.font = `600 ${13 * scale}px ${tok('--sans')}`; ctx.fillText(title, pad, 20 * scale);
+    ctx.drawImage(canvas, pad, head);
+    ctx.fillStyle = tok('--muted'); ctx.font = `${fs}px ${tok('--sans')}`;
+    lines.forEach((l, i) => ctx.fillText(l, pad, head + canvas.height + (16 + 16 * i) * scale));
+    return new Promise((res, rej) => out.toBlob(b => b ? b.arrayBuffer().then(buf => res(new Uint8Array(buf))) : rej(new Error('chart image failed')), 'image/png'));
+  },
+  saveBlob(blob, name){
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
   },
 
   // ---- sweep: vary one parameter over its listed values, S runs each, final-period mean ± sd ----
