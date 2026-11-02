@@ -202,7 +202,7 @@ Any other runtime field (`env`, `agents`, `t`, …) is yours. Do not name one `p
 - Within one chart, no two series may share both dash and marker: a reader who cannot see colour must still tell them apart. The focal series is solid with filled markers; a comparison or baseline is dashed with hollow markers.
 - The page draws one legend under each chart, in every view (a single run, Batch, Compare, Sweep, and the chart images in Download zip): a short sample of each line, with its dash pattern and marker, followed by the series' full `label`. Labels are never shortened, so make each one complete but short (a few words, no line-style words).
 - Compare draws every series twice: as declared ("on"), and again ("off") in the same colour with hollow markers and a different line: solid becomes dashed, dashed becomes dotted, dotted becomes dashed. Choose dash patterns and markers so that no two of the lines drawn in one chart look the same in Compare; the self-check warns when two would.
-- Two to four charts, one to three series each. Fixed `yMin`/`yMax` so a single run and a batch are comparable (shares and normalised performance: 0 to 1).
+- Two to four charts, one to three series each. Fixed `yMin`/`yMax` so a single run and a batch are comparable (shares and normalised performance: 0 to 1). Set them to the true limits: the page adds a little headroom above `yMax` and below `yMin` itself, so values exactly at a limit stay visible, and keeps the axis numbers inside the limits.
 - The first chart is always system performance over time; the second, where agents can differ, their heterogeneity over time; a third, optional, about the AI. See the instructions, slot 10.
 
 ### Checks

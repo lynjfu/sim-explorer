@@ -121,12 +121,19 @@ label.ctl input[type=file]{display:none}
 
 /* Charts */
 #charts{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;padding:12px 16px 6px;overflow:auto}
+#charts::-webkit-scrollbar{width:10px}
+#charts::-webkit-scrollbar-thumb{background:var(--track);border-radius:5px;border:2px solid var(--bg)}
+#charts-more{position:relative;height:0;z-index:4}
+#charts-more span{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--accent-fg);font-size:12px;padding:3px 12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none;white-space:nowrap}
+#charts-more.off{display:none}
 .chart{display:flex;flex-direction:column;min-width:0;min-height:220px;background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 6px}
 .chart .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:2px}
 .chart .cv{flex:1;position:relative;min-height:150px}
 .chart .how{font-size:11px;color:var(--fg);margin-top:6px;line-height:1.35;display:flex;flex-direction:column;gap:3px}
 .chart .how .li{display:flex;align-items:flex-start;gap:7px}
 .chart .how .li img{flex-shrink:0;margin-top:1px}
+.chart .how .col{flex:0 0 64px;display:flex;justify-content:center;text-align:center}
+.chart .how .hd{font-size:10px;color:var(--muted);line-height:1.2}
 .chart .how b{color:var(--fg);font-weight:500}
 #sweep-area{display:none;border-top:1px dashed var(--rule);padding:10px 16px 6px;flex-shrink:0}
 #sweep-area.on{display:block}
@@ -236,6 +243,7 @@ label.ctl input[type=file]{display:none}
     </div>
 
     <div id="charts"></div>
+    <div id="charts-more" class="off" aria-hidden="true"><span>↓ more below: scroll the charts</span></div>
 
     <div id="sweep-area"><div class="ttl" id="sweep-title">Sweep</div><div id="sweep-charts"></div></div>
 
@@ -530,6 +538,16 @@ const colorOf = name => tok(OI[name] || '--oi-black');
 const MARKER_WORD = { circle:'circles', triangle:'triangles', rect:'squares', rectRot:'diamonds', cross:'crosses', star:'stars' };
 const dashWord = dashClass;
 const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
+// y axis with headroom: 4% of the range above yMax and below yMin, so values exactly at a limit are not hidden on the edge;
+// tick labels stay at round numbers inside the declared range (0 … 1, not −0.04 … 1.04).
+const niceStep = raw => { const e = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; };
+function yAxis(spec, grid, fg){
+  const ticks = { color: fg, font: { family: tok('--mono'), size: 10 } };
+  if (spec.yMin == null || spec.yMax == null || !(spec.yMax > spec.yMin)) return { grace: '4%', grid: { color: grid }, ticks: Object.assign(ticks, { maxTicksLimit: 6 }) };
+  const lo = spec.yMin, hi = spec.yMax, pad = 0.04 * (hi - lo), step = niceStep((hi - lo) / 5);
+  return { min: lo - pad, max: hi + pad, grid: { color: grid }, ticks,
+    afterBuildTicks: ax => { const t = []; for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) t.push({ value: +v.toPrecision(12) }); ax.ticks = t; } };
+}
 const shortLabel = (t, max = 34) => {
   if (t.length <= max) return t;
   const m = t.match(/^(.*?)( \([^()]{1,18}\))$/);
@@ -545,6 +563,9 @@ const legendSwatch = (s, scale = 2) => {
   return cv;
 };
 const legendHtml = series => series.map(x => `<div class="li"><img src="${legendSwatch(x).toDataURL()}" width="30" height="12" alt=""><span>${x.label}</span></div>`).join('');
+// Compare: each measure once, with its two line samples side by side under the two setting names
+const pairedLegendHtml = pr => `<div class="li hd"><span class="col">${pr.on}</span><span class="col">${pr.off}</span><span></span></div>` +
+  pr.base.map(x => `<div class="li"><span class="col"><img src="${legendSwatch(x).toDataURL()}" width="30" height="12" alt="${pr.on}"></span><span class="col"><img src="${legendSwatch(compareTwin(x)).toDataURL()}" width="30" height="12" alt="${pr.off}"></span><span>${x.label}</span></div>`).join('');
 const $ = id => document.getElementById(id);
 const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;   // this page as loaded, for the Download zip
 const LINK_SERVICE = 'https://sim-links.carolynfu.workers.dev';   // links/worker.js, deployed on Cloudflare
@@ -569,6 +590,9 @@ const App = {
     this.interval = 410 - 80;
     // pop-up windows
     $('backdrop').addEventListener('click', () => this.closePanel());
+    $('charts').addEventListener('scroll', () => this.moreCue());
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.moreCue()).observe($('charts'));
+    window.addEventListener('resize', () => this.moreCue());
     document.querySelectorAll('.box .x').forEach(x => x.addEventListener('click', () => this.closePanel()));
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.panel) this.closePanel(); });
     $('chip-load').addEventListener('click', () => this.togglePanel('loader'));
@@ -736,7 +760,7 @@ const App = {
         plugins: { legend: { display: false },   // the legend is drawn under the chart from the series fields, with full labels
                    tooltip: { enabled: true, filter: it => !datasets[it.datasetIndex].band } },
         scales: { x: { type: categories ? 'category' : 'linear', min: categories ? undefined : 1, max: categories ? undefined : xMax, title: { display: true, text: xLabel, color: fg, font: { size: 10 } }, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 8 } },
-                  y: { min: spec.yMin, max: spec.yMax, grid: { color: grid }, ticks: { color: fg, font: { family: tok('--mono'), size: 10 }, maxTicksLimit: 6 } } } } });
+                  y: yAxis(spec, grid, fg) } } });
   },
   buildCharts(spec){
     for (const k in this.charts) this.charts[k].destroy(); this.charts = {}; this.chartSpec = spec;
@@ -744,12 +768,15 @@ const App = {
     for (const c of spec){
       const wrap = document.createElement('div'); wrap.className = 'chart';
       const note = c.note || '';
-      wrap.innerHTML = `<div class="ttl">${c.title}${note ? ` <button class="info" title="${note.replace(/"/g,'&quot;')}" aria-label="what to look for in this chart">ⓘ</button>` : ''}</div><div class="tip off"></div><div class="cv"><canvas id="cv-${c.id}" aria-label="${c.title}"></canvas></div><div class="how">${legendHtml(c.series)}</div>`;
+      wrap.innerHTML = `<div class="ttl">${c.title}${note ? ` <button class="info" title="${note.replace(/"/g,'&quot;')}" aria-label="what to look for in this chart">ⓘ</button>` : ''}</div><div class="tip off"></div><div class="cv"><canvas id="cv-${c.id}" aria-label="${c.title}"></canvas></div><div class="how">${c.pairs ? pairedLegendHtml(c.pairs) : legendHtml(c.series)}</div>`;
       if (note){ const t = wrap.querySelector('.tip'); t.textContent = note; wrap.querySelector('.info').addEventListener('click', () => t.classList.toggle('off')); }
       box.appendChild(wrap);
       this.charts[c.id] = this.makeChart($('cv-' + c.id), c, this.model.T, 'period');
     }
+    setTimeout(() => this.moreCue(), 0);
   },
+  // show "more below" whenever the chart area does not fit and is not scrolled to the end
+  moreCue(){ const c = $('charts'); $('charts-more').classList.toggle('off', !(c.scrollHeight > c.clientHeight + 4 && c.scrollTop + c.clientHeight < c.scrollHeight - 4)); },
   clearCharts(){ for (const k in this.charts){ const ch = this.charts[k]; ch.data.datasets.forEach(d => { d.data = Array(d.data.length).fill(null); }); ch.update('none'); } },
   pushRec(rec){
     const t = rec.t - 1;
@@ -875,7 +902,7 @@ const App = {
 
   // derived chart spec: each series twice; "off" has hollow markers and a different line: solid → dashed, dashed → dotted, dotted → dashed
   showCompare(Bon, Boff, onL, offL){
-    const spec = this.model.charts.map(c => ({ id: c.id, title: c.title, yMin: c.yMin, yMax: c.yMax, series: c.series.flatMap(s => [
+    const spec = this.model.charts.map(c => ({ id: c.id, title: c.title, note: c.note, yMin: c.yMin, yMax: c.yMax, pairs: { on: onL, off: offL, base: c.series }, series: c.series.flatMap(s => [
       Object.assign({}, s, { key: s.key + '__on',  label: `${s.label} (${onL})` }),
       Object.assign(compareTwin(s), { key: s.key + '__off', label: `${s.label} (${offL})` }),
     ]) }));
