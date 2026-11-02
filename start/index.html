@@ -235,7 +235,6 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
       <span class="msg" id="msg-prompt"></span>
     </div>
     <details><summary>Show your answers as they will be sent</summary><pre class="preview" id="preview"></pre></details>
-    <p class="small" style="margin:12px 0 0">To keep a copy of your answers, including what you expect, <a href="#" id="link-answers">download my_answers.md</a>.</p>
   </div>
 
   <div class="card">
@@ -428,7 +427,6 @@ $('btn-copy-prompt').addEventListener('click', () => {
   const ok = () => m.textContent = 'Copied. Paste it into a new chat.', bad = () => m.textContent = 'Copying is blocked here. Use the download instead.';
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, bad); else bad();
 });
-$('link-answers').addEventListener('click', e => { e.preventDefault(); saveText('# My simulation answers\n\n' + answersMarkdown(read(), false), 'my_answers.md'); });
 
 // ---- steps ----
 let step = 1;
