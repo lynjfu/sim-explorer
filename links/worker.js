@@ -1,4 +1,4 @@
-// sim-explorer short links: a Cloudflare Worker with one KV namespace bound as LINKS.
+// sim-explorer permalinks: a Cloudflare Worker with one KV namespace bound as LINKS.
 //   POST /save        body = the model.js text  ->  { id }        (only from the explorer's own site)
 //   GET  /m/<id>      ->  the model.js text, or 404
 // Nothing else exists: no listing, no deleting, no overwriting. An id is derived from the code itself,
@@ -39,7 +39,7 @@ export default {
     const m = url.pathname.match(/^\/m\/([a-z2-9]{12})$/);
     if (m && request.method === 'GET') {
       const code = await env.LINKS.get('m:' + m[1]);
-      if (code == null) return json({ error: 'This link does not exist or has expired.' }, 404, cors('*', 'GET'));
+      if (code == null) return json({ error: 'This permalink does not exist or has expired.' }, 404, cors('*', 'GET'));
       return new Response(code, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=300', ...cors('*', 'GET') } });
     }
 
@@ -47,10 +47,10 @@ export default {
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(siteOrigin, 'POST, OPTIONS') });
       if (request.method !== 'POST') return json({ error: 'Use POST.' }, 405, cors(siteOrigin, 'POST, OPTIONS'));
       const h = cors(siteOrigin, 'POST, OPTIONS');
-      if (!ALLOWED_ORIGINS.includes(origin)) return json({ error: 'Links can only be made from the explorer page.' }, 403, h);
+      if (!ALLOWED_ORIGINS.includes(origin)) return json({ error: 'Permalinks can only be made from the explorer page.' }, 403, h);
 
       const code = await request.text();
-      if (new TextEncoder().encode(code).length > MAX_BYTES) return json({ error: 'This model is too large to link (over 200 KB).' }, 413, h);
+      if (new TextEncoder().encode(code).length > MAX_BYTES) return json({ error: 'This model is too large for a permalink (over 200 KB).' }, 413, h);
       if (!/const\s+MODELS\s*=/.test(code)) return json({ error: 'This does not look like a model.js (it does not define MODELS).' }, 400, h);
 
       const id = await idFor(code);
@@ -61,7 +61,7 @@ export default {
       const hour = Math.floor(Date.now() / 3600000);
       const rlKey = `rl:${ip}:${hour}`;
       const used = parseInt(await env.LINKS.get(rlKey) || '0', 10);
-      if (used >= SAVES_PER_HOUR) return json({ error: `Too many links made from here this hour (limit ${SAVES_PER_HOUR}). Try again later.` }, 429, h);
+      if (used >= SAVES_PER_HOUR) return json({ error: `Too many permalinks made from here this hour (limit ${SAVES_PER_HOUR}). Try again later.` }, 429, h);
 
       await env.LINKS.put(key, code, { expirationTtl: KEEP_SECONDS });
       await env.LINKS.put(rlKey, String(used + 1), { expirationTtl: 3700 });

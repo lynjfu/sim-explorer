@@ -156,7 +156,7 @@ label.ctl input[type=file]{display:none}
   <span class="running" id="chip-source">Running: …</span>
   <button class="chip" id="chip-check" title="Show the self-check report">self-check: …</button>
   <button class="chip go" id="chip-load" title="Paste the model.js your AI assistant wrote, or choose the file. Only you will see it: it runs in your browser and is not uploaded.">Load your own model</button>
-  <button class="chip link" id="chip-link" title="Make a short link to the model you loaded. It stores a copy of your model code on the link service: anyone with the link can open and read it. You will be asked before anything is stored.">Get a short link</button>
+  <button class="chip link" id="chip-link" title="Make a permalink to the model you loaded. It stores a copy of your model code on the permalink service: anyone with the permalink can open and read it. You will be asked before anything is stored.">Get a permalink</button>
   <button class="chip dl" id="chip-dl" title="Download a zip with the model code, this page, and the results of many runs at the current settings">Download zip</button>
 </div>
 
@@ -187,20 +187,20 @@ label.ctl input[type=file]{display:none}
       <div class="row"><button class="ctl" id="btn-copy-check">Copy report</button><button class="ctl" id="btn-rerun-check">Run again</button><span id="check-msg"></span></div>
     </div>
     <div id="linkbox" class="box off">
-      <div class="ttl">Short link to your model</div>
-      <p class="private">Before you make a link: this stores a copy of your model's code on the explorer's link service, so that the link can open it.</p>
+      <div class="ttl">Permalink to your model</div>
+      <p class="private">Before you make a permalink: this stores a copy of your model's code on the explorer's permalink service, so that the permalink can open it.</p>
       <ul class="caution">
-        <li><b>Anyone who has the link</b> can open your model, run it and read its code. Nobody can find it without the link, and the page still shows everyone else the built-in example.</li>
+        <li><b>Anyone who has the permalink</b> can open your model, run it and read its code. Nobody can find it without the permalink, and the page still shows everyone else the built-in example.</li>
         <li><b>You cannot delete it yourself.</b> It stops working a year after it was first made. To have it removed sooner, ask your instructor.</li>
-        <li><b>It is a snapshot.</b> The link always opens this exact version; if you change your model, make a new link.</li>
+        <li><b>It is a snapshot.</b> The permalink always opens this exact version; if you change your model, make a new permalink.</li>
         <li>Only the model code is stored: not your name, your answers, your notes or your results.</li>
       </ul>
-      <div class="row"><button class="ctl primary" id="btn-link-make">Make the link</button><input class="linkout off" id="link-out" readonly aria-label="short link"><button class="ctl off" id="btn-link-copy">Copy</button><span id="link-msg"></span></div>
+      <div class="row"><button class="ctl primary" id="btn-link-make">Make the permalink</button><input class="linkout off" id="link-out" readonly aria-label="permalink"><button class="ctl off" id="btn-link-copy">Copy</button><span id="link-msg"></span></div>
     </div>
     <div id="linkrun" class="box off">
-      <div class="ttl">A model from a link</div>
-      <p class="private">This link contains a model written by whoever shared it. It runs only in your browser; nothing is sent anywhere.</p>
-      <div class="row"><button class="ctl primary" id="btn-link-run">Run the model in this link</button><button class="ctl" id="btn-link-skip">Show the built-in example instead</button><span id="linkrun-msg"></span></div>
+      <div class="ttl">A model from a permalink</div>
+      <p class="private">This permalink opens a model written by whoever shared it. It runs only in your browser; nothing is sent anywhere.</p>
+      <div class="row"><button class="ctl primary" id="btn-link-run">Run the model in this permalink</button><button class="ctl" id="btn-link-skip">Show the built-in example instead</button><span id="linkrun-msg"></span></div>
     </div>
     <div id="dlbox" class="box off">
       <div class="ttl">Download code and results</div>
@@ -514,7 +514,7 @@ const dashWord = d => !d || d.length === 0 ? 'solid' : (d[0] <= 2 ? 'dotted' : '
 const seriesWords = s => `<b>${s.label}</b>: ${dashWord(s.dash)} ${s.color || 'black'} line, ${s.hollow ? 'hollow' : 'filled'} ${MARKER_WORD[s.marker] || s.marker || 'circles'}`;
 const $ = id => document.getElementById(id);
 const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;   // this page as loaded, for the Download zip
-const LINK_SERVICE = 'https://sim-links.carolynjfu.workers.dev';   // links/worker.js, deployed on Cloudflare
+const LINK_SERVICE = 'https://sim-links.carolynfu.workers.dev';   // links/worker.js, deployed on Cloudflare
 const STORE_CODE = 'explorer-model-code';
 const ABOUT_KEYS = [['task','Task environment'],['representation','Representation'],['actions','Actions'],['feedback','Feedback'],['transformation','Transformation']];
 const aboutHtml = ab => Array.isArray(ab) ? ab.map(p => `<p>${p}</p>`).join('') : ABOUT_KEYS.filter(([k]) => ab[k]).map(([k, lab]) => `<p><b>${lab}.</b> ${ab[k]}</p>`).join('');
@@ -547,8 +547,8 @@ const App = {
     $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
     $('chip-link').addEventListener('click', () => this.openLinkBox());
     $('btn-link-make').addEventListener('click', () => this.makeLink());
-    $('btn-link-copy').addEventListener('click', () => this.copyText($('link-out').value, null, null, 'link-msg', 'Link'));
-    $('btn-link-run').addEventListener('click', () => { const c = this.linkCode; if (!c) return; $('linkrun').classList.add('off'); this.loadCode(c, 'the model from this link', false); });
+    $('btn-link-copy').addEventListener('click', () => this.copyText($('link-out').value, null, null, 'link-msg', 'Permalink'));
+    $('btn-link-run').addEventListener('click', () => { const c = this.linkCode; if (!c) return; $('linkrun').classList.add('off'); this.loadCode(c, 'the model from this permalink', false); });
     $('btn-link-skip').addEventListener('click', () => { $('linkrun').classList.add('off'); history.replaceState(null, '', location.pathname); this.useBuiltin(false); });
     $('chip-dl').addEventListener('click', () => { const b = $('dlbox'); b.classList.toggle('off'); if (!b.classList.contains('off')) this.prepareDownload(); });
     $('btn-dl').addEventListener('click', () => this.download());
@@ -829,13 +829,13 @@ const App = {
     this.plotBatch(lookup, spec, s => s.key);
   },
 
-  // ---- short links: the code is stored by the link service; the page only sends it when asked ----
+  // ---- permalinks: the code is stored by the permalink service (links/worker.js); the page only sends it when asked ----
   openLink(id){
     this.useBuiltin(false);   // the example runs behind the question
     const box = $('linkrun'); box.classList.remove('off'); $('btn-link-run').disabled = true; $('linkrun-msg').textContent = 'fetching the model…';
     fetch(`${LINK_SERVICE}/m/${id}`).then(r => r.ok ? r.text() : r.json().then(j => Promise.reject(new Error(j.error || 'not found'))))
       .then(code => { this.linkCode = code; $('btn-link-run').disabled = false; $('linkrun-msg').textContent = `${(code.length / 1024).toFixed(1)} KB of model code.`; })
-      .catch(e => { $('linkrun-msg').textContent = 'Could not open this link: ' + e.message; });
+      .catch(e => { $('linkrun-msg').textContent = 'Could not open this permalink: ' + e.message; });
   },
   openLinkBox(){
     const box = $('linkbox'); box.classList.toggle('off');
@@ -845,19 +845,19 @@ const App = {
     const msg = $('link-msg'); $('link-out').value = '';
     if (!this.codeText && this.inlineModel){ const sc = Array.from(document.scripts).find(x => !x.src && !x.id && /const\s+MODELS\s*=/.test(x.textContent)); if (sc) this.codeText = sc.textContent.replace(/^\n/, ''); }
     if (!this.codeText){
-      msg.textContent = /built-in/.test($('chip-source').textContent) ? 'This is the built-in example. Press “Load your own model” first, then make a link to yours.' : 'The model code could not be read here. Load it with “Load your own model”, then try again.';
+      msg.textContent = /built-in/.test($('chip-source').textContent) ? 'This is the built-in example. Press “Load your own model” first, then make a permalink to yours.' : 'The model code could not be read here. Load it with “Load your own model”, then try again.';
       return;
     }
-    if (!/^https:\/\/(carolynjfu\.com|lynjfu\.github\.io)$/.test(location.origin)){ msg.textContent = 'Short links can be made only on the online explorer, carolynjfu.com/sim-explorer.'; return; }
-    msg.textContent = 'making the link…';
+    if (!/^https:\/\/(carolynjfu\.com|lynjfu\.github\.io)$/.test(location.origin)){ msg.textContent = 'Permalinks can be made only on the online explorer, carolynjfu.com/sim-explorer.'; return; }
+    msg.textContent = 'making the permalink…';
     try {
       const r = await fetch(`${LINK_SERVICE}/save`, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: this.codeText });
       const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
       const url = `${location.origin}${location.pathname}?m=${j.id}`;
       $('btn-link-make').classList.add('off'); $('link-out').classList.remove('off'); $('btn-link-copy').classList.remove('off');
       $('link-out').value = url; $('link-out').select();
-      this.copyText(url, null, null, 'link-msg', 'Link');
-    } catch (e){ msg.textContent = 'Could not make a link: ' + e.message; }
+      this.copyText(url, null, null, 'link-msg', 'Permalink');
+    } catch (e){ msg.textContent = 'Could not make a permalink: ' + e.message; }
   },
 
   // ---- download: code, page and results of many runs, as one zip ----
