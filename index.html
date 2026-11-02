@@ -545,10 +545,12 @@ const App = {
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.panel) this.closePanel(); });
     $('chip-load').addEventListener('click', () => this.togglePanel('loader'));
     $('chip-check').addEventListener('click', () => this.togglePanel('checkbox'));
-    const loaded = ok => { if (ok && this.panel === 'loader') this.closePanel(); };   // a model that loads and passes: show it
+    // the address must match what runs: once you load your own model or go back to the example, the permalink leaves the address bar
+    const dropLink = () => { if (new URLSearchParams(location.search).has('m')) history.replaceState(null, '', location.pathname + location.hash); };
+    const loaded = ok => { if (ok) dropLink(); if (ok && this.panel === 'loader') this.closePanel(); };   // a model that loads and passes: show it
     $('btn-load-code').addEventListener('click', () => loaded(this.loadCode($('model-code').value, 'your pasted model', true)));
     $('model-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { $('model-code').value = txt; loaded(this.loadCode(txt, `your file ${f.name}`, true)); }); });
-    $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); if (this.panel === 'loader') this.closePanel(); });
+    $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} dropLink(); this.useBuiltin(true); if (this.panel === 'loader') this.closePanel(); });
     $('btn-copy-check').addEventListener('click', () => this.copyText(this.check ? this.check.lines.join('\n') : '', null, null, 'check-msg', 'Report'));
     $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
     $('chip-link').addEventListener('click', () => this.openLinkBox());
