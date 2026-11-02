@@ -32,7 +32,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 | `id` | string | Letters and digits only. Used in element ids. |
 | `name` | string | Tab label and page heading. Two to five words. |
 | `about` | object | The "Model" block: five short entries, one or two sentences each, in plain language: `{ task, representation, actions, feedback, transformation }`. The page labels them "Task environment", "Representation", "Actions", "Feedback", "Transformation". Say what the agents do, not how the code does it; numbers and symbols that are parameters (N, K, σ, φ) may be named. An array of paragraphs is still accepted but is longer than people want to read. |
-| `howToRead` | string[] | Optional. One to three sentences on what to look for across the whole model. Shown as hover text (and on click) behind an ⓘ beside the Model heading, not as a block of text. The page writes each chart's line encodings itself under the chart, so do not repeat those. |
+| `howToRead` | string[] | Not shown on the page any more; do not write it. Older models that have it still load. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |
 | `compare` | object | Optional. `{ key, on, off, labelOn, labelOff }`: the parameter and the two values the Compare button overlays: the AI on/off switch. Declare it only when the model has an AI agent; without it the page hides the Compare button. |

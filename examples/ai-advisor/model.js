@@ -15,9 +15,6 @@ const NK_AI_ADVISOR = {
     feedback: 'The person sees the true performance of the alternative they checked.',
     transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
   },
-  howToRead: [
-    'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest. Raise σ to watch trust fall as the advisor misleads people. Press Compare to overlay with and without AI.'
-  ],
   T: 60,
 
   params: [

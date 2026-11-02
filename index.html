@@ -168,7 +168,7 @@ label.ctl input[type=file]{display:none}
 
 <div id="main">
   <div id="left">
-    <div class="block" id="about"><h2>Model <button class="info" id="about-info" aria-label="what to look for">ⓘ</button></h2><div id="about-tip" class="tip off"></div><div id="about-body"></div></div>
+    <div class="block" id="about"><h2>Model</h2><div id="about-body"></div></div>
     <div class="block"><h2>Parameters</h2><div id="params"></div></div>
   </div>
 
@@ -646,9 +646,6 @@ const App = {
   buildLeft(){
     const m = this.model;
     $('about-body').innerHTML = aboutHtml(m.about);
-    const how = (m.howToRead || []).join(' ');
-    const tip = $('about-tip'), info = $('about-info'); tip.textContent = how; tip.classList.add('off'); info.style.display = how ? '' : 'none'; info.title = how;
-    info.onclick = () => tip.classList.toggle('off');
     const box = $('params'); box.innerHTML = '';
     for (const d of m.params){
       const row = document.createElement('div'); row.className = 'param';

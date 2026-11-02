@@ -90,7 +90,7 @@ Follow `MODEL_CONTRACT.md` exactly. In addition:
 - Expose as parameters only what the student will actually vary (four to seven). Fixed constants go in the `about` text or a `// fixed:` comment.
 - Give every `seg` parameter the values the student will sweep. A `range` parameter is sweepable only if it carries a `sweep: [values]` list.
 - Keep a run cheap: a Batch of 200 runs should finish in under about five seconds in a browser. If it will not, reduce the defaults (rounds, number of agents, N) and say so.
-- Write `about` as five short entries, `{ task, representation, actions, feedback, transformation }`, one or two sentences each, in the student's own terms (the five questions they answered, condensed). That is all the model description the page shows; keep it short. Write `howToRead` as one to three sentences on what to look for across the model, and give each chart a one-sentence `note` on what to look for in it; both appear only as hover text behind an ⓘ, so keep them short. Never describe line styles (the page writes those from the series fields).
+- Write `about` as five short entries, `{ task, representation, actions, feedback, transformation }`, one or two sentences each, in the student's own terms (the five questions they answered, condensed). That is all the model description the page shows; keep it short. Give each chart a one-sentence `note` on what to look for in it; it appears only as hover text behind an ⓘ beside the chart title, so keep it short. Do not write `howToRead`: the page no longer shows it. Never describe line styles (the page writes those from the series fields).
 - Declare two to four `checks`: things the model must do if it is right, in plain words. Examples: "with the AI switched off, nobody follows it"; "when the task has one best answer, everyone finds it"; "when exploration is zero, nobody ever tries something new". Prefer exact or comparative checks over numeric thresholds you cannot compute (see the contract). The page runs them when the model loads.
 - The patterns in the contract (softmax choice, move-part-way updating) are offers, not defaults. If the student described a different rule ("pick the best, sometimes try one at random"), implement the student's rule.
 - Follow the chart rules: every line in a chart is told apart by its dash pattern and marker shape before its colour; colours are from the page's list; one to three lines per chart.
@@ -160,7 +160,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 | `id` | string | Letters and digits only. Used in element ids. |
 | `name` | string | Tab label and page heading. Two to five words. |
 | `about` | object | The "Model" block: five short entries, one or two sentences each, in plain language: `{ task, representation, actions, feedback, transformation }`. The page labels them "Task environment", "Representation", "Actions", "Feedback", "Transformation". Say what the agents do, not how the code does it; numbers and symbols that are parameters (N, K, σ, φ) may be named. An array of paragraphs is still accepted but is longer than people want to read. |
-| `howToRead` | string[] | Optional. One to three sentences on what to look for across the whole model. Shown as hover text (and on click) behind an ⓘ beside the Model heading, not as a block of text. The page writes each chart's line encodings itself under the chart, so do not repeat those. |
+| `howToRead` | string[] | Not shown on the page any more; do not write it. Older models that have it still load. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |
 | `compare` | object | Optional. `{ key, on, off, labelOn, labelOff }`: the parameter and the two values the Compare button overlays: the AI on/off switch. Declare it only when the model has an AI agent; without it the page hides the Compare button. |
@@ -278,9 +278,6 @@ const NK_AI_ADVISOR = {
     feedback: 'The person sees the true performance of the alternative they checked.',
     transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
   },
-  howToRead: [
-    'With the advisor on and σ = 0, every followed recommendation is the best single-choice alternative, so performance rises fastest. Raise σ to watch trust fall as the advisor misleads people. Press Compare to overlay with and without AI.'
-  ],
   T: 60,
 
   params: [
