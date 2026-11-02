@@ -10,16 +10,17 @@
   --bg:#f3f4f6; --panel:#e9ebef; --card:#ffffff; --fg:#1f2328; --muted:#5c6470; --faint:#9aa1ab; --rule:#d3d7dd;
   --accent:#2f4b6e; --accent-fg:#ffffff; --track:#cfd4db; --warn:#8a5a00; --warn-bg:#fff4d6;
   --ans-bg:#eaf1f9; --ans-rule:#2f4b6e; --input:#ffffff;
+  --go:#0b6e4f; --go-fg:#ffffff; --dl:#b34700; --dl-fg:#ffffff;
   --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
-  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark;
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; --go:#5ec29a; --go-fg:#0f1a14; --dl:#f0a35e; --dl-fg:#1f1408; color-scheme:dark;
   --ans-bg:#1c2633; --ans-rule:#8fb3dc; --input:#17191d; }}
 :root[data-theme="dark"]{
   --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
-  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; color-scheme:dark;
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --warn:#f0c674; --warn-bg:#3a3020; --go:#5ec29a; --go-fg:#0f1a14; --dl:#f0a35e; --dl-fg:#1f1408; color-scheme:dark;
   --ans-bg:#1c2633; --ans-rule:#8fb3dc; --input:#17191d; }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -35,9 +36,11 @@ header{background:var(--panel);border-bottom:1px solid var(--rule);position:stic
 .bar{max-width:820px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .bar h1{font-size:15px;font-weight:600;white-space:nowrap}
 .bar .home{font-size:12.5px;color:var(--muted);margin-left:auto}
+.bar nav{flex:1;min-width:0}
 ol.steps{list-style:none;display:flex;align-items:center;gap:0;min-width:0}
-ol.steps li{display:flex;align-items:center;flex:0 1 auto;min-width:0}
-ol.steps li:not(:last-child)::after{content:"";width:28px;height:0;border-top:2px solid var(--track);margin:0 8px;flex-shrink:0}
+ol.steps li{display:flex;align-items:center;flex:0 0 auto;min-width:0}
+ol.steps li:not(:last-child){flex:1 1 auto}
+ol.steps li:not(:last-child)::after{content:"";flex:1;min-width:28px;height:0;border-top:2px solid var(--track);margin:0 12px}
 ol.steps li.done:not(:last-child)::after{border-top-style:solid;border-top-color:var(--accent)}
 ol.steps button{display:flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:4px 2px;color:var(--muted);min-width:0;text-align:left}
 ol.steps .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;background:var(--card)}
@@ -121,6 +124,13 @@ figure{margin:0}
 figure img{display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:6px;background:var(--card)}
 figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
 .kbd{font-family:var(--mono);font-size:12.5px;background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:0 5px}
+/* Inline copies of the explorer's buttons, so the text shows exactly what to press */
+.ui{display:inline-block;white-space:nowrap;vertical-align:baseline;line-height:1.3;border-radius:3px;border:1px solid var(--track);padding:2px 9px;font-size:13px}
+.ui.ctl{background:var(--card);color:var(--fg);font-family:var(--sans)}
+.ui.ctl.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.ui.chip{font-family:var(--mono);font-size:11.5px;background:var(--card);color:var(--muted)}
+.ui.go{background:var(--go);border-color:var(--go);color:var(--go-fg);font-weight:600;font-size:12.5px}
+.ui.dl{background:var(--dl);border-color:var(--dl);color:var(--dl-fg);font-weight:600;font-size:12.5px}
 </style>
 </head>
 <body>
@@ -256,18 +266,18 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
           <figcaption>The built-in example: 20 people search for a good project on a rugged landscape, and an AI advisor recommends changes to them. The animation steps through one run, then presses Compare. Each “without AI” line is drawn in the same colour as its “with AI” line, with hollow markers and a different line style. Your model will appear in the same layout. <a href="https://github.com/lynjfu/sim-explorer/tree/main/examples/ai-advisor" target="_blank" rel="noopener">Read the example's answers and code</a>.</figcaption>
         </figure>
       </li>
-      <li>Press the green <b>Load your own model</b> button in the top-right corner, paste the code into the box that opens, and press <b>Load pasted code</b> under it. If the assistant gave you a file instead, press <b>Choose model.js file</b>.</li>
-      <li>Look at the top-right corner. <span class="kbd">self-check: passed ✓</span> means your model is running. If it says <span class="kbd">failed ✗</span>, click it, press “Copy report”, paste the report back to the assistant with the words “please fix this”, and load the new version the same way.</li>
+      <li>Press <span class="ui go">Load your own model</span> in the top-right corner, paste the code into the box that opens, and press <span class="ui ctl primary">Load pasted code</span> under it. If the assistant gave you a file instead, press <span class="ui ctl">Choose model.js file</span>.</li>
+      <li>Look at the top-right corner. <span class="ui chip">self-check: passed ✓</span> means your model is running. If it says <span class="ui chip">self-check: 1 failed ✗</span>, click it, press <span class="ui ctl">Copy report</span>, paste the report back to the assistant with the words “please fix this”, and load the new version the same way.</li>
     </ol>
-    <p class="small" style="margin:10px 0 0">Your model runs only in your browser; nobody else sees it, and the page shows everyone else the example. Your browser remembers your model until you press “Use built-in model” or clear its data.</p>
+    <p class="small" style="margin:10px 0 0">Your model runs only in your browser; nobody else sees it, and the page shows everyone else the example. Your browser remembers your model until you press <span class="ui ctl">Use built-in model</span> or clear its data.</p>
   </div>
 
   <div class="card">
     <h3>4. Refine it, then save your results</h3>
     <ol class="do">
-      <li>Press <b>Step</b> to watch one run a period at a time, and <b>Batch</b> to average many runs. If your model has an AI agent, <b>Compare</b> overlays the runs with and without it.</li>
+      <li>Press <span class="ui ctl">Step</span> to watch one run a period at a time, and <span class="ui ctl">Batch</span> to average many runs. If your model has an AI agent, <span class="ui ctl">Compare with AI vs without AI</span> overlays the runs with and without it.</li>
       <li>Where the agents do something you did not intend, tell the assistant in the same chat (“when an agent ties, it should stay, not switch”; “add a setting for how noisy the AI is”) and load the new version. The agents' rules, the settings, the charted quantities, the strip and the log can all change this way. The page itself stays the same for everyone. Keep a short list of what you changed and why.</li>
-      <li>When you have a version you want to keep, press <b>Download zip</b> in the top-right corner of the explorer and choose how many runs to include. The zip holds your model code, every run's numbers, the averages, the charts as images and the settings needed to reproduce them. Its <code>index.html</code> is the explorer with your model inside: open it any time, on any computer, to run your model again.</li>
+      <li>When you have a version you want to keep, press <span class="ui dl">Download zip</span> in the top-right corner of the explorer, choose how many runs to include and press <span class="ui ctl primary">Make zip</span>. The zip holds your model code, every run's numbers, the averages, the charts as images and the settings needed to reproduce them. Its <code>index.html</code> is the explorer with your model inside: open it any time, on any computer, to run your model again.</li>
     </ol>
   </div>
 
