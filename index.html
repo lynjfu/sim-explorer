@@ -43,7 +43,7 @@ code{font-family:var(--mono);font-size:.92em}
 .running{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .chip.link{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:5px 12px;background:var(--pl);border-color:var(--pl);color:var(--pl-fg)}
 .chip.link:hover{filter:brightness(1.08)}
-.box ul.caution{font-size:12.5px;color:var(--fg);margin:0 0 8px 18px}
+.box ul.caution{font-size:13.5px;color:var(--fg);margin:0 0 8px 18px}
 .box ul.caution li{margin-bottom:3px}
 .box .off{display:none}
 .box input.linkout{font-family:var(--mono);font-size:12px;width:min(100%,520px);padding:5px 8px}
@@ -87,12 +87,17 @@ select,input[type=number],input[type=text]{font-family:var(--mono);font-size:11.
 textarea{width:100%;min-height:90px;font-family:var(--sans);font-size:12.5px;background:var(--card);color:var(--fg);border:1px solid var(--track);border-radius:3px;padding:8px;resize:vertical}
 
 /* Loader and self-check boxes (top of the right column) */
-.box{border-bottom:1px solid var(--rule);padding:10px 16px;background:var(--panel);flex-shrink:0;max-height:46vh;overflow:auto}
+/* Pop-up windows (load, self-check, permalink, download, a model from a permalink): one at a time, over a dimmed page */
+#backdrop{position:fixed;inset:0;background:rgba(15,18,24,.45);z-index:25}
+#backdrop.off{display:none}
+.box{position:fixed;top:7vh;left:50%;transform:translateX(-50%);width:min(820px,94vw);max-height:84vh;overflow:auto;z-index:30;background:var(--card);border:1px solid var(--rule);border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.30);padding:22px 26px 22px}
+.box .x{position:absolute;top:10px;right:12px;width:34px;height:34px;border:none;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;border-radius:4px}
+.box .x:hover{background:var(--panel);color:var(--fg)}
 .box.off{display:none}
 .box p.private{color:var(--priv);font-weight:600}
-.box .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:6px}
-.box p{font-size:12.5px;color:var(--muted);margin-bottom:8px}
-.box textarea{font-family:var(--mono);font-size:11px;min-height:120px}
+.box .ttl{font-size:16px;font-weight:600;color:var(--fg);margin:0 40px 12px 0}
+.box p{font-size:13.5px;color:var(--muted);margin-bottom:10px}
+.box textarea{font-family:var(--mono);font-size:11.5px;min-height:260px}
 .box .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
 .box pre{font-family:var(--mono);font-size:11px;white-space:pre-wrap;color:var(--fg);line-height:1.5}
 .box pre .fail{color:var(--warn);font-weight:500}
@@ -169,7 +174,8 @@ label.ctl input[type=file]{display:none}
   </div>
 
   <div id="right">
-    <div id="loader" class="box off">
+    <div id="backdrop" class="off"></div>
+    <div id="loader" class="box off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
       <div class="ttl">Load your own model</div>
       <p class="private">🔒 Only you can see the model you load here. It runs in your browser and is not uploaded; everyone else who opens this page still sees the built-in example.</p>
       <p>Paste the whole <code>model.js</code> that your AI assistant wrote, or choose the file. This page remembers the pasted model in this browser until you press “Use built-in model”.</p>
@@ -181,13 +187,13 @@ label.ctl input[type=file]{display:none}
         <span id="load-msg"></span>
       </div>
     </div>
-    <div id="checkbox" class="box off">
+    <div id="checkbox" class="box off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
       <div class="ttl">Self-check</div>
       <p>Run automatically when a model loads. A failing line is something to paste back to your AI assistant, together with the question “please fix this”.</p>
       <pre id="check-text"></pre>
       <div class="row"><button class="ctl" id="btn-copy-check">Copy report</button><button class="ctl" id="btn-rerun-check">Run again</button><span id="check-msg"></span></div>
     </div>
-    <div id="linkbox" class="box off">
+    <div id="linkbox" class="box off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
       <div class="ttl">Permalink to your model</div>
       <p class="private">Before you make a permalink: this stores a copy of your model's code on the explorer's permalink service, so that the permalink can open it.</p>
       <ul class="caution">
@@ -198,12 +204,12 @@ label.ctl input[type=file]{display:none}
       </ul>
       <div class="row"><button class="ctl primary" id="btn-link-make">Make the permalink</button><input class="linkout off" id="link-out" readonly aria-label="permalink"><button class="ctl off" id="btn-link-copy">Copy</button><span id="link-msg"></span></div>
     </div>
-    <div id="linkrun" class="box off">
+    <div id="linkrun" class="box off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
       <div class="ttl">A model from a permalink</div>
       <p class="private">This permalink opens a model written by whoever shared it. It runs only in your browser; nothing is sent anywhere.</p>
       <div class="row"><button class="ctl primary" id="btn-link-run">Run the model in this permalink</button><button class="ctl" id="btn-link-skip">Show the built-in example instead</button><span id="linkrun-msg"></span></div>
     </div>
-    <div id="dlbox" class="box off">
+    <div id="dlbox" class="box off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
       <div class="ttl">Download code and results</div>
       <p>Runs the model many times at the parameters set on the left and saves everything in one zip: the model code and this page (unzip and open <code>index.html</code> to run it again), every run period by period, the mean and spread per period, each run's final values, the charts as images, the settings and seed, and your notes. Nothing is uploaded; the zip is made in your browser. A number typed in the seed box is used as the base seed; otherwise a new one is drawn and recorded.</p>
       <div class="row">
@@ -538,20 +544,24 @@ const App = {
     const notes = $('notes');
     try { notes.value = localStorage.getItem('explorer-notes-' + location.pathname) || ''; } catch(e){}
     notes.addEventListener('input', () => { try { localStorage.setItem('explorer-notes-' + location.pathname, notes.value); } catch(e){} });
-    // loader
-    $('chip-load').addEventListener('click', () => $('loader').classList.toggle('off'));
-    $('chip-check').addEventListener('click', () => { $('checkbox').classList.toggle('off'); });
-    $('btn-load-code').addEventListener('click', () => this.loadCode($('model-code').value, 'your pasted model', true));
-    $('model-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { $('model-code').value = txt; this.loadCode(txt, `your file ${f.name}`, true); }); });
-    $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); });
+    // pop-up windows
+    $('backdrop').addEventListener('click', () => this.closePanel());
+    document.querySelectorAll('.box .x').forEach(x => x.addEventListener('click', () => this.closePanel()));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.panel) this.closePanel(); });
+    $('chip-load').addEventListener('click', () => this.togglePanel('loader'));
+    $('chip-check').addEventListener('click', () => this.togglePanel('checkbox'));
+    const loaded = ok => { if (ok && this.panel === 'loader') this.closePanel(); };   // a model that loads and passes: show it
+    $('btn-load-code').addEventListener('click', () => loaded(this.loadCode($('model-code').value, 'your pasted model', true)));
+    $('model-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { $('model-code').value = txt; loaded(this.loadCode(txt, `your file ${f.name}`, true)); }); });
+    $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); if (this.panel === 'loader') this.closePanel(); });
     $('btn-copy-check').addEventListener('click', () => this.copyText(this.check ? this.check.lines.join('\n') : '', null, null, 'check-msg', 'Report'));
     $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
     $('chip-link').addEventListener('click', () => this.openLinkBox());
     $('btn-link-make').addEventListener('click', () => this.makeLink());
     $('btn-link-copy').addEventListener('click', () => this.copyText($('link-out').value, null, null, 'link-msg', 'Permalink'));
-    $('btn-link-run').addEventListener('click', () => { const c = this.linkCode; if (!c) return; $('linkrun').classList.add('off'); this.loadCode(c, 'the model from this permalink', false); });
-    $('btn-link-skip').addEventListener('click', () => { $('linkrun').classList.add('off'); history.replaceState(null, '', location.pathname); this.useBuiltin(false); });
-    $('chip-dl').addEventListener('click', () => { const b = $('dlbox'); b.classList.toggle('off'); if (!b.classList.contains('off')) this.prepareDownload(); });
+    $('btn-link-run').addEventListener('click', () => { const c = this.linkCode; if (!c) return; this.panel = null; this.closePanel(); this.loadCode(c, 'the model from this permalink', false); });
+    $('btn-link-skip').addEventListener('click', () => { this.closePanel(); this.useBuiltin(false); });
+    $('chip-dl').addEventListener('click', () => { if (this.panel === 'dlbox') this.closePanel(); else { this.openPanel('dlbox'); this.prepareDownload(); } });
     $('btn-dl').addEventListener('click', () => this.download());
     $('dl-code-file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; f.text().then(txt => { this.codeText = txt; $('dl-code-msg').textContent = `${f.name} will be included.`; }); });
     const linkId = (new URLSearchParams(location.search).get('m') || '').toLowerCase();
@@ -563,9 +573,24 @@ const App = {
     else this.useBuiltin(false);
   },
 
+  // ---- pop-up windows: at most one open; ✕, Esc or a click outside closes it ----
+  PANELS: ['loader', 'checkbox', 'linkbox', 'linkrun', 'dlbox'],
+  panel: null,
+  openPanel(id){
+    for (const b of this.PANELS) $(b).classList.toggle('off', b !== id);
+    $('backdrop').classList.remove('off'); this.panel = id;
+    const x = $(id).querySelector('.x'); if (x) x.focus({ preventScroll:true });
+  },
+  closePanel(){
+    if (this.panel === 'linkrun') history.replaceState(null, '', location.pathname);   // closing the permalink question = show the example
+    for (const b of this.PANELS) $(b).classList.add('off');
+    $('backdrop').classList.add('off'); this.panel = null;
+  },
+  togglePanel(id){ if (this.panel === id) this.closePanel(); else this.openPanel(id); },
+
   useBuiltin(say){
     if (typeof MODELS !== 'undefined' && Array.isArray(MODELS) && MODELS.length){ this.codeText = null; this.boot(MODELS, this.inlineModel ? 'the model in this page' : 'the built-in example'); if (say) this.loadMsg('Using the built-in model.js.'); }
-    else { $('loader').classList.remove('off'); $('chip-source').textContent = 'Running: no model yet'; $('chip-check').textContent = 'self-check: —'; this.loadMsg('No model.js was found next to this page. Paste one above.'); }
+    else { this.openPanel('loader'); $('chip-source').textContent = 'Running: no model yet'; $('chip-check').textContent = 'self-check: —'; this.loadMsg('No model.js was found next to this page. Paste one here.'); }
   },
   loadMsg(s, bad){ const el = $('load-msg'); el.textContent = s; el.style.color = bad ? 'var(--warn)' : ''; },
   loadCode(code, label, remember){
@@ -593,7 +618,7 @@ const App = {
     });
     this.selfCheck(false);
     if (this.check.ok || this.check.failures === 0) this.switchModel(models[0].id);
-    else { $('checkbox').classList.remove('off'); $('charts').innerHTML = ''; $('title-el').textContent = 'Explorer'; $('about-body').innerHTML = ''; $('params').innerHTML = ''; }
+    else { this.openPanel('checkbox'); $('charts').innerHTML = ''; $('title-el').textContent = 'Explorer'; $('about-body').innerHTML = ''; $('params').innerHTML = ''; }
   },
   selfCheck(show){
     const chip = $('chip-check'); chip.textContent = 'self-check: running…';
@@ -603,7 +628,7 @@ const App = {
     chip.textContent = res.ok ? 'self-check: passed ✓' : `self-check: ${res.failures} failed ✗`;
     chip.classList.toggle('bad', !res.ok);
     $('check-text').innerHTML = res.lines.map(l => l.startsWith('FAIL') ? `<span class="fail">${l}</span>` : l).join('\n');
-    if (show || !res.ok) $('checkbox').classList.remove('off');
+    if (show || !res.ok) this.openPanel('checkbox');
     if (this.model) { for (const d of this.model.params) if (!(d.key in this.model.p)) this.model.p[d.key] = d.default; }
   },
 
@@ -833,13 +858,13 @@ const App = {
   // ---- permalinks: the code is stored by the permalink service (links/worker.js); the page only sends it when asked ----
   openLink(id){
     this.useBuiltin(false);   // the example runs behind the question
-    const box = $('linkrun'); box.classList.remove('off'); $('btn-link-run').disabled = true; $('linkrun-msg').textContent = 'fetching the model…';
+    this.openPanel('linkrun'); $('btn-link-run').disabled = true; $('linkrun-msg').textContent = 'fetching the model…';
     fetch(`${LINK_SERVICE}/m/${id}`).then(r => r.ok ? r.text() : r.json().then(j => Promise.reject(new Error(j.error || 'not found'))))
       .then(code => { this.linkCode = code; $('btn-link-run').disabled = false; $('linkrun-msg').textContent = `${(code.length / 1024).toFixed(1)} KB of model code.`; })
       .catch(e => { $('linkrun-msg').textContent = 'Could not open this permalink: ' + e.message; });
   },
   openLinkBox(){
-    const box = $('linkbox'); box.classList.toggle('off');
+    this.togglePanel('linkbox');
     $('link-out').classList.add('off'); $('btn-link-copy').classList.add('off'); $('btn-link-make').classList.remove('off'); $('link-msg').textContent = '';
   },
   async makeLink(){
