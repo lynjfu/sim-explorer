@@ -10,7 +10,7 @@ const NK_AI_ADVISOR = {
 
   about: {
     task: 'M people each run a project made of N yes/no choices. A project is scored on an NK landscape: each choice’s payoff depends on K other choices, so there are many combinations that are locally good but not the best. Performance is shown divided by the best possible. The landscape is fixed during a run.',
-    representation: 'A person knows their own project and its true performance, and can look at one alternative per period (one choice flipped). The advisor sees all N single-choice alternatives, but through estimates with error σ.',
+    representation: 'A person knows their own project and its true performance, and can look at one alternative per period (one choice flipped). The advisor looks at every project that differs from the person’s current one on exactly one dimension (N of them), but sees their performance with an error σ.',
     actions: 'Without AI, a person checks one random alternative and switches if it is strictly better. With AI, with probability equal to their trust they check the advisor’s recommendation (its highest estimate) instead; otherwise they search alone.',
     feedback: 'The person sees the true performance of the alternative they checked.',
     transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
