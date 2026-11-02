@@ -54,7 +54,7 @@ section.page.on{display:block}
 h2{font-size:24px;font-weight:600;line-height:1.25;margin-bottom:8px}
 h3{font-size:17px;font-weight:600;margin:0 0 6px}
 p{margin-bottom:12px}
-.intro{font-size:17px;line-height:1.5;margin-bottom:22px;padding:14px 18px;border-left:4px solid var(--accent);background:var(--card);border-radius:0 6px 6px 0}
+.intro{font-size:19px;font-weight:500;line-height:1.45;margin:4px 0 22px}
 .lead{color:var(--muted);font-size:15.5px;margin-bottom:22px}
 .small{font-size:13px;color:var(--muted)}
 .card{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:18px 20px;margin-bottom:16px}
@@ -81,9 +81,7 @@ p{margin-bottom:12px}
 .stage .hint{font-size:13.5px;color:var(--muted);border-left:3px solid var(--track);padding-left:10px;margin:8px 0 14px}
 .stage .hint b{color:var(--fg);font-weight:500}
 /* The part to fill in: tinted panel, accent rule, pencil mark in the label */
-.answer{background:var(--ans-bg);border-left:4px solid var(--ans-rule);border-radius:0 6px 6px 0;padding:10px 14px 14px}
-.answer label.field:first-child{margin-top:2px}
-.answer label.field::before{content:"✎ ";color:var(--ans-rule)}
+.answer label.field:first-child{margin-top:0}
 .stage .next{margin-top:12px;display:flex;justify-content:flex-end}
 .tally{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:22px 0 10px}
 .tally b{font-size:17px}
@@ -143,9 +141,7 @@ figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
 
 <!-- ============================ STEP 1 ============================ -->
 <section class="page" id="page1" aria-labelledby="h1">
-  <p class="intro">This tool turns a simulation you describe in plain words into a working model that runs in your web browser, where you can step through it, compare settings and download the results, with the help of any AI assistant.</p>
-  <h2 id="h1">Describe your model</h2>
-  <p class="lead">Answer the five questions below in writing, about three to five sentences each. Write for a smart colleague, not for a programmer. Click a question to open it. What you type is saved in this browser as you go.</p>
+  <p class="intro" id="h1">This tool turns a simulation you describe in plain words into a working model that runs in your web browser, where you can step through it, compare settings and download the results, with the help of any AI assistant.</p>
 
   <div class="card soft">
     <h3>Role of computational simulations in organizational learning research</h3>
