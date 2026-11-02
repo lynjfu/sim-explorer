@@ -10,7 +10,7 @@
 :root{
   --bg:#f3f4f6; --panel:#e9ebef; --card:#ffffff; --fg:#1f2328; --muted:#5c6470; --faint:#9aa1ab; --rule:#d3d7dd;
   --accent:#2f4b6e; --accent-fg:#ffffff; --track:#cfd4db; --warn:#8a5a00; --warn-bg:#fff4d6;
-  --go:#0b6e4f; --go-fg:#ffffff; --dl:#b34700; --dl-fg:#ffffff;   /* the "Load your own model" (green) and "Download zip" (orange) buttons: UI colours, not data colours */
+  --go:#0b6e4f; --go-fg:#ffffff; --dl:#b34700; --dl-fg:#ffffff; --priv:#b3261e;   /* the "Load your own model" (green) and "Download zip" (orange) buttons: UI colours, not data colours */
   /* Okabe–Ito data palette: colour-blind safe. Colour is always the second encoding after line style and marker. */
   --oi-blue:#0072B2; --oi-orange:#D55E00; --oi-green:#009E73; --oi-yellow:#F0E442; --oi-sky:#56B4E9; --oi-purple:#CC79A7; --oi-black:#1f2328;
   --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
@@ -18,10 +18,10 @@
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
-  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --oi-black:#e6e8eb; --warn:#f0c674; --warn-bg:#3a3020; --go:#5ec29a; --go-fg:#0f1a14; --dl:#f0a35e; --dl-fg:#1f1408; color-scheme:dark; }}
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --oi-black:#e6e8eb; --warn:#f0c674; --warn-bg:#3a3020; --go:#5ec29a; --go-fg:#0f1a14; --dl:#f0a35e; --dl-fg:#1f1408; --priv:#ff8a80; color-scheme:dark; }}
 :root[data-theme="dark"]{
   --bg:#17191d; --panel:#1f2228; --card:#24282f; --fg:#e6e8eb; --muted:#aab1bb; --faint:#6f7781; --rule:#363b44;
-  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --oi-black:#e6e8eb; --warn:#f0c674; --warn-bg:#3a3020; --go:#5ec29a; --go-fg:#0f1a14; --dl:#f0a35e; --dl-fg:#1f1408; color-scheme:dark; }
+  --accent:#8fb3dc; --accent-fg:#101318; --track:#3a404a; --oi-black:#e6e8eb; --warn:#f0c674; --warn-bg:#3a3020; --go:#5ec29a; --go-fg:#0f1a14; --dl:#f0a35e; --dl-fg:#1f1408; --priv:#ff8a80; color-scheme:dark; }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -82,6 +82,7 @@ textarea{width:100%;min-height:90px;font-family:var(--sans);font-size:12.5px;bac
 /* Loader and self-check boxes (top of the right column) */
 .box{border-bottom:1px solid var(--rule);padding:10px 16px;background:var(--panel);flex-shrink:0;max-height:46vh;overflow:auto}
 .box.off{display:none}
+.box p.private{color:var(--priv);font-weight:600}
 .box .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:6px}
 .box p{font-size:12.5px;color:var(--muted);margin-bottom:8px;max-width:90ch}
 .box textarea{font-family:var(--mono);font-size:11px;min-height:120px}
@@ -148,7 +149,7 @@ label.ctl input[type=file]{display:none}
   <span class="spacer"></span>
   <button class="chip" id="chip-source" title="Which model code is running">model: …</button>
   <button class="chip" id="chip-check" title="Show the self-check report">self-check: …</button>
-  <button class="chip go" id="chip-load" title="Paste the model.js your AI assistant wrote, or choose the file">Load your own model</button>
+  <button class="chip go" id="chip-load" title="Paste the model.js your AI assistant wrote, or choose the file. Only you will see it: it runs in your browser and is not uploaded.">Load your own model</button>
   <button class="chip dl" id="chip-dl" title="Download a zip with the model code, this page, and the results of many runs at the current settings">Download zip</button>
 </div>
 
@@ -162,7 +163,8 @@ label.ctl input[type=file]{display:none}
   <div id="right">
     <div id="loader" class="box off">
       <div class="ttl">Load your own model</div>
-      <p>Paste the whole <code>model.js</code> that your AI assistant wrote, or choose the file. The code runs only in your browser and nothing is uploaded. This page remembers the pasted model in this browser until you press “Use built-in model”.</p>
+      <p class="private">🔒 Only you can see the model you load here. It runs in your browser and is not uploaded; everyone else who opens this page still sees the built-in example.</p>
+      <p>Paste the whole <code>model.js</code> that your AI assistant wrote, or choose the file. This page remembers the pasted model in this browser until you press “Use built-in model”.</p>
       <textarea id="model-code" placeholder="// paste model.js here, then press Load" aria-label="model code"></textarea>
       <div class="row">
         <button class="ctl primary" id="btn-load-code">Load pasted code</button>

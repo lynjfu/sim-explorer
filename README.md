@@ -4,7 +4,7 @@
 
 This repository turns a simulation you have described in words into a model you can watch run, change and compare, in your browser, using whichever AI assistant you already use (Claude, ChatGPT, Gemini or another). You answer the questions in plain language; the assistant writes one small file; a fixed web page runs it, checks it and shows it. The page is the same for everyone. The model inside it is yours.
 
-**Or use the guided version:** https://carolynjfu.com/sim-explorer/start/ asks the same questions on one page (with an AI agent as a suggestion, not a requirement), hands you one prompt file with your answers already in it, and runs the `model.js` your assistant writes in the online explorer, with nothing to download or install. It is the same page and the same `model.js` as the steps below.
+**Or use the guided version:** https://carolynjfu.com/sim-setup/ asks the same questions on one page (with an AI agent as a suggestion, not a requirement), hands you one prompt file with your answers already in it, and runs the `model.js` your assistant writes in the online explorer, with nothing to download or install. It is the same page and the same `model.js` as the steps below.
 
 ## The steps
 
@@ -36,14 +36,14 @@ Your model's parameters on the left. On the right: Step through one run a round 
 | `model.js` | The built-in example model (people searching for a good project with an AI advisor). Yours replaces it. |
 | `examples/ai-advisor/` | That example end to end: the written answers, the `model.js`, and the assumption list that came with it. |
 | `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` | What the assistant does and what `model.js` must contain. For the assistant; you do not need to read them. |
-| `start/` | The guided version of the steps (a web page). Its prompt file is built from `2_PROMPT.md`; `example.gif` shows the example model running. |
+| `start/` | Files for the guided page, which lives in its own repository (github.com/lynjfu/sim-setup, served at carolynjfu.com/sim-setup/): `prompt.js`, built from `2_PROMPT.md`, and `example.gif`. Its `index.html` forwards the old address to the new one. |
 | `scripts/` | For instructors and maintainers, below. |
 
 ## For instructors
 
 - **Hosting.** The example is served from GitHub Pages at the link above; students work from a downloaded copy so each sees their own model. A fork works the same way: switch on Pages for the fork and the link becomes `https://<user>.github.io/sim-explorer/` (or the fork owner's custom domain).
 - **Reading a student's model.** Open the page, press **Load your own model** (top right), paste their `model.js`, press **Load pasted code**. Their `about` text, assumption list and checks are in the file. The self-check tells you at once whether it runs, whether a seed reproduces, and whether their own sanity checks pass.
-- **Rebuilding the prompt.** `scripts/build_prompt.sh` writes `2_PROMPT.md` from `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` and `model.js`. Run it after editing any of them. It also writes `start/prompt.js`, the same prompt for the guided page.
+- **Rebuilding the prompt.** `scripts/build_prompt.sh` writes `2_PROMPT.md` from `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` and `model.js`. Run it after editing any of them. It also writes `start/prompt.js`, the same prompt for the guided page at carolynjfu.com/sim-setup/; push this repository and the guided page picks it up.
 - **Checking a model headlessly.** `scripts/smoke_test.sh path/to/model.js` runs the page's self-check from the command line (needs `node`, or the `jsc` that ships with macOS).
 - **One-file copy.** `scripts/inline_model.sh [model.js] out.html` puts the model inside the page, for emailing or publishing as a single file.
 - **Claude Code.** The folder carries a skill at `.claude/skills/sim-explorer/`; in Claude Code (terminal or web) a student can open the folder and say "build my model from my answers". `scripts/install_skill.sh` installs the same skill user-wide.

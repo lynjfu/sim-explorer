@@ -20,7 +20,7 @@ HDR
   printf '```\n\n---\n\n# The student'"'"'s answers follow\n\n'
 } > "$OUT"
 echo "wrote $OUT ($(wc -c < "$OUT") bytes)"
-# The start page (start/index.html) needs the same prompt without the first comment line, as a script it can load from a local folder too.
+# The guided setup page (carolynjfu.com/sim-setup/, repository lynjfu/sim-setup) needs the same prompt without the first comment line, as a script it can load from a local folder too.
 python3 - "$OUT" "$DIR/start/prompt.js" <<'PY'
 import json, sys
 body = open(sys.argv[1], encoding='utf-8').read().split('\n', 2)[2]
