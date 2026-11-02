@@ -42,6 +42,9 @@ code{font-family:var(--mono);font-size:.92em}
 .chip{font-family:var(--mono);font-size:11px;padding:3px 8px;border:1px solid var(--track);border-radius:3px;background:var(--card);color:var(--muted);cursor:pointer}
 .running{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .chip.link{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:5px 12px;background:var(--card);color:var(--fg);border-color:var(--track)}
+.box ul.caution{font-size:12.5px;color:var(--fg);margin:0 0 8px 18px}
+.box ul.caution li{margin-bottom:3px}
+.box .off{display:none}
 .box input.linkout{font-family:var(--mono);font-size:12px;width:min(100%,520px);padding:5px 8px}
 .chip.bad{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
 .chip.go{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:5px 12px;background:var(--go);border-color:var(--go);color:var(--go-fg)}
@@ -153,7 +156,7 @@ label.ctl input[type=file]{display:none}
   <span class="running" id="chip-source">Running: …</span>
   <button class="chip" id="chip-check" title="Show the self-check report">self-check: …</button>
   <button class="chip go" id="chip-load" title="Paste the model.js your AI assistant wrote, or choose the file. Only you will see it: it runs in your browser and is not uploaded.">Load your own model</button>
-  <button class="chip link" id="chip-link" title="Make a short link to the model you loaded, to open it on another computer or send it to someone">Get a short link</button>
+  <button class="chip link" id="chip-link" title="Make a short link to the model you loaded. It stores a copy of your model code on the link service: anyone with the link can open and read it. You will be asked before anything is stored.">Get a short link</button>
   <button class="chip dl" id="chip-dl" title="Download a zip with the model code, this page, and the results of many runs at the current settings">Download zip</button>
 </div>
 
@@ -185,9 +188,14 @@ label.ctl input[type=file]{display:none}
     </div>
     <div id="linkbox" class="box off">
       <div class="ttl">Short link to your model</div>
-      <p class="private">🔒 Anyone you give this link to can open your model. Nobody can find it without the link, and the page still shows everyone else the built-in example.</p>
-      <div class="row"><input class="linkout" id="link-out" readonly aria-label="short link"><button class="ctl" id="btn-link-copy">Copy</button><span id="link-msg"></span></div>
-      <p style="margin-top:8px">The link opens this exact version. If you change your model, make a new link. Links stop working a year after they were first made.</p>
+      <p class="private">Before you make a link: this stores a copy of your model's code on the explorer's link service, so that the link can open it.</p>
+      <ul class="caution">
+        <li><b>Anyone who has the link</b> can open your model, run it and read its code. Nobody can find it without the link, and the page still shows everyone else the built-in example.</li>
+        <li><b>You cannot delete it yourself.</b> It stops working a year after it was first made. To have it removed sooner, ask your instructor.</li>
+        <li><b>It is a snapshot.</b> The link always opens this exact version; if you change your model, make a new link.</li>
+        <li>Only the model code is stored: not your name, your answers, your notes or your results.</li>
+      </ul>
+      <div class="row"><button class="ctl primary" id="btn-link-make">Make the link</button><input class="linkout off" id="link-out" readonly aria-label="short link"><button class="ctl off" id="btn-link-copy">Copy</button><span id="link-msg"></span></div>
     </div>
     <div id="linkrun" class="box off">
       <div class="ttl">A model from a link</div>
@@ -537,7 +545,8 @@ const App = {
     $('btn-builtin').addEventListener('click', () => { try { localStorage.removeItem(STORE_CODE); } catch(e){} this.useBuiltin(true); });
     $('btn-copy-check').addEventListener('click', () => this.copyText(this.check ? this.check.lines.join('\n') : '', null, null, 'check-msg', 'Report'));
     $('btn-rerun-check').addEventListener('click', () => this.selfCheck(true));
-    $('chip-link').addEventListener('click', () => this.makeLink());
+    $('chip-link').addEventListener('click', () => this.openLinkBox());
+    $('btn-link-make').addEventListener('click', () => this.makeLink());
     $('btn-link-copy').addEventListener('click', () => this.copyText($('link-out').value, null, null, 'link-msg', 'Link'));
     $('btn-link-run').addEventListener('click', () => { const c = this.linkCode; if (!c) return; $('linkrun').classList.add('off'); this.loadCode(c, 'the model from this link', false); });
     $('btn-link-skip').addEventListener('click', () => { $('linkrun').classList.add('off'); history.replaceState(null, '', location.pathname); this.useBuiltin(false); });
@@ -828,8 +837,12 @@ const App = {
       .then(code => { this.linkCode = code; $('btn-link-run').disabled = false; $('linkrun-msg').textContent = `${(code.length / 1024).toFixed(1)} KB of model code.`; })
       .catch(e => { $('linkrun-msg').textContent = 'Could not open this link: ' + e.message; });
   },
+  openLinkBox(){
+    const box = $('linkbox'); box.classList.toggle('off');
+    $('link-out').classList.add('off'); $('btn-link-copy').classList.add('off'); $('btn-link-make').classList.remove('off'); $('link-msg').textContent = '';
+  },
   async makeLink(){
-    const box = $('linkbox'); box.classList.remove('off'); const msg = $('link-msg'); $('link-out').value = '';
+    const msg = $('link-msg'); $('link-out').value = '';
     if (!this.codeText && this.inlineModel){ const sc = Array.from(document.scripts).find(x => !x.src && !x.id && /const\s+MODELS\s*=/.test(x.textContent)); if (sc) this.codeText = sc.textContent.replace(/^\n/, ''); }
     if (!this.codeText){
       msg.textContent = /built-in/.test($('chip-source').textContent) ? 'This is the built-in example. Press “Load your own model” first, then make a link to yours.' : 'The model code could not be read here. Load it with “Load your own model”, then try again.';
@@ -841,6 +854,7 @@ const App = {
       const r = await fetch(`${LINK_SERVICE}/save`, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: this.codeText });
       const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
       const url = `${location.origin}${location.pathname}?m=${j.id}`;
+      $('btn-link-make').classList.add('off'); $('link-out').classList.remove('off'); $('btn-link-copy').classList.remove('off');
       $('link-out').value = url; $('link-out').select();
       this.copyText(url, null, null, 'link-msg', 'Link');
     } catch (e){ msg.textContent = 'Could not make a link: ' + e.message; }
