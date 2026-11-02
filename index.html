@@ -619,14 +619,15 @@ const App = {
   },
   selfCheck(show){
     const chip = $('chip-check'); chip.textContent = 'self-check: running…';
-    let res;
+    let res; const savedP = this.models.map(m => m.p ? Object.assign({}, m.p) : null);   // the check sets every model to its defaults
     try { res = runSelfCheck(this.models, { runs: 30 }); } catch (e){ res = { ok:false, failures:1, lines:['FAIL the self-check itself threw: ' + e.message] }; }
     this.check = res;
     chip.textContent = res.ok ? 'self-check: passed ✓' : `self-check: ${res.failures} failed ✗`;
     chip.classList.toggle('bad', !res.ok);
     $('check-text').innerHTML = res.lines.map(l => l.startsWith('FAIL') ? `<span class="fail">${l}</span>` : l).join('\n');
     if (show || !res.ok) this.openPanel('checkbox');
-    if (this.model) { for (const d of this.model.params) if (!(d.key in this.model.p)) this.model.p[d.key] = d.default; }
+    this.models.forEach((m, i) => { if (savedP[i]) m.p = savedP[i]; });
+    if (this.model) { for (const d of this.model.params) if (!(d.key in this.model.p)) this.model.p[d.key] = d.default; this.restoreRun(); }
   },
 
   switchModel(id){
@@ -764,6 +765,14 @@ const App = {
   // ---- run control ----
   paramString(){ return this.model.params.map(d => d.key + '=' + (d.fmt ? d.fmt(this.model.p[d.key]) : this.model.p[d.key])).join(' '); },
   pickSeed(){ const s = $('seed').value; return s === '' ? (Math.floor(Math.random() * 1e9) >>> 0) : (parseInt(s) >>> 0); },
+  // Background runs (timing for Download zip, a re-run self-check) reuse the model object and overwrite the run on screen.
+  // Every run is reproducible from its seed, so rebuild the on-screen run up to the current period, exactly as it was.
+  restoreRun(){
+    if (this.mode !== 'single' || !this.model || this.seedUsed == null || this.t < 0) return;
+    this.rng = makeRng(this.seedUsed);
+    this.model.generateEnvironment(this.rng); this.model.initState(this.rng);
+    for (let i = 0; i <= this.t; i++) this.model.stepPeriod(this.rng);
+  },
   reset(autoplay){
     this.stopPlay(); this.mode = 'single'; this.t = -1; this.clearLog();
     if (this.chartSpec !== this.model.charts) this.buildCharts(this.model.charts);
@@ -892,7 +901,7 @@ const App = {
     $('dl-cmp-wrap').classList.toggle('off', !cmp);
     if (cmp) $('dl-cmp-label').textContent = `run every seed twice, ${cmp.labelOn || 'on'} and ${cmp.labelOff || 'off'} (${cmp.key} = ${cmp.on} / ${cmp.off}), as Compare does`;
     // time a few runs, then cap the menu at what this computer does in about DL_MAX_SECONDS
-    const t0 = performance.now(); const probe = 5; runBatch(m, probe, 12345); const msPerRun = Math.max(0.05, (performance.now() - t0) / probe);
+    const t0 = performance.now(); const probe = 5; runBatch(m, probe, 12345); const msPerRun = Math.max(0.05, (performance.now() - t0) / probe); this.restoreRun();
     this.dlMsPerRun = msPerRun;
     const conds = cmp ? 2 : 1; const sel = $('dl-runs'); const prev = parseInt(sel.value) || 200; sel.innerHTML = '';
     let best = null;
