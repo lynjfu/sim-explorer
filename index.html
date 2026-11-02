@@ -170,7 +170,6 @@ label.ctl input[type=file]{display:none}
   <div id="left">
     <div class="block" id="about"><h2>Model <button class="info" id="about-info" aria-label="what to look for">ⓘ</button></h2><div id="about-tip" class="tip off"></div><div id="about-body"></div></div>
     <div class="block"><h2>Parameters</h2><div id="params"></div></div>
-    <div class="block"><h2>Notes (saved in this browser only)</h2><textarea id="notes" placeholder="Observations, questions, what to change next…"></textarea></div>
   </div>
 
   <div id="right">
@@ -199,7 +198,7 @@ label.ctl input[type=file]{display:none}
         <li><b>Anyone who has the permalink</b> can open your model, run it and read its code. Nobody can find it without the permalink, and the page still shows everyone else the built-in example.</li>
         <li><b>You cannot delete it yourself.</b> It stops working a year after it was first made. To have it removed sooner, ask your instructor.</li>
         <li><b>It is a snapshot.</b> The permalink always opens this exact version; if you change your model, make a new permalink.</li>
-        <li>Only the model code is stored: not your name, your answers, your notes or your results.</li>
+        <li>Only the model code is stored: not your name, your answers or your results.</li>
       </ul>
       <div class="row"><button class="ctl primary" id="btn-link-make">Make the permalink</button><input class="linkout off" id="link-out" readonly aria-label="permalink"><button class="ctl off" id="btn-link-copy">Copy</button><span id="link-msg"></span></div>
     </div>
@@ -210,7 +209,7 @@ label.ctl input[type=file]{display:none}
     </div>
     <div id="dlbox" class="box off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
       <div class="ttl">Download code and results</div>
-      <p>Runs the model many times at the parameters set on the left and saves everything in one zip: the model code and this page (unzip and open <code>index.html</code> to run it again), every run period by period, the mean and spread per period, each run's final values, the charts as images, the settings and seed, and your notes. Nothing is uploaded; the zip is made in your browser. A number typed in the seed box is used as the base seed; otherwise a new one is drawn and recorded.</p>
+      <p>Runs the model many times at the parameters set on the left and saves everything in one zip: the model code and this page (unzip and open <code>index.html</code> to run it again), every run period by period, the mean and spread per period, each run's final values, the charts as images and the settings and seed. Nothing is uploaded; the zip is made in your browser. A number typed in the seed box is used as the base seed; otherwise a new one is drawn and recorded.</p>
       <div class="row">
         <label for="dl-runs">Number of runs</label><select id="dl-runs" aria-label="number of runs"></select>
         <label id="dl-cmp-wrap" class="off"><input type="checkbox" id="dl-cmp" checked> <span id="dl-cmp-label"></span></label>
@@ -540,9 +539,6 @@ const App = {
     $('btn-csv').addEventListener('click', () => this.copyText(this.csv, 'csvbox', 'csv-text', 'csv-msg', 'CSV'));
     $('speed').addEventListener('input', e => { this.interval = 410 - parseInt(e.target.value); });
     this.interval = 410 - 80;
-    const notes = $('notes');
-    try { notes.value = localStorage.getItem('explorer-notes-' + location.pathname) || ''; } catch(e){}
-    notes.addEventListener('input', () => { try { localStorage.setItem('explorer-notes-' + location.pathname, notes.value); } catch(e){} });
     // pop-up windows
     $('backdrop').addEventListener('click', () => this.closePanel());
     document.querySelectorAll('.box .x').forEach(x => x.addEventListener('click', () => this.closePanel()));
@@ -991,7 +987,6 @@ const App = {
       `  summary.csv    mean and standard deviation across runs, per period${cmp ? ' and setting' : ''}. The same numbers as ${cmp ? 'Compare' : 'Batch'} on the page with this seed and number of runs.`,
       '  final.csv      each run\'s values in the last period.',
       '  settings.json  parameters, seeds and run counts, for reproducing these numbers.',
-      '  notes.txt      the Notes box from the page.',
       '  charts/        the charts as images:',
       ...chartWords.map(w => '                   ' + w),
       cmp ? `                 In every chart each quantity appears twice: "${conds[0].label}" as the model draws it, "${conds[1].label}" in the same colour with hollow markers and a different line (solid becomes dashed, dashed becomes dotted, dotted becomes dashed).` : '',
@@ -1004,7 +999,6 @@ const App = {
     add('index.html', (code && PAGE_SOURCE.includes(tag)) ? PAGE_SOURCE.replace(tag, () => '<script>\n' + code.replace(/<\/script/gi, '<\\/script') + '\n<' + '/script>') : PAGE_SOURCE);
     add('runs.csv', runs.join('\n') + '\n'); add('summary.csv', summ.join('\n') + '\n'); add('final.csv', fin.join('\n') + '\n');
     add('settings.json', JSON.stringify(settings, null, 2) + '\n');
-    add('notes.txt', ($('notes').value || '') + '\n');
     files.push(...pngs);
     const blob = new Blob(zipParts(files, now), { type: 'application/zip' });
     this.saveBlob(blob, folder + '.zip');
