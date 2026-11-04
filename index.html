@@ -112,6 +112,11 @@ label.ctl input[type=file]{display:none}
 .ctl.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .ctl:disabled{opacity:.5;cursor:default}
 .ctl.off{display:none}
+#controls .info.off{display:none}
+#controls .info{font-size:13px}
+#controls .pair{display:inline-flex;align-items:center;gap:2px}
+#controls .pair:has(.ctl.off){display:none}
+#ctl-tip{position:fixed;z-index:30;max-width:320px;margin:0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 #controls .grp{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 #controls .grp input,#controls .grp select{width:auto;padding:4px 6px}
 #controls .grp input[type=number]{width:72px}
@@ -225,18 +230,19 @@ label.ctl input[type=file]{display:none}
 
     <div id="controls">
       <button class="ctl" id="btn-reset" title="Start a new run with the current parameters (paused). A typed seed is reused; otherwise a new one is drawn.">Reset</button>
-      <button class="ctl" id="btn-step" title="Advance one period. The charts, the state strip and the log update; use it to check a mechanism period by period.">Step</button>
+      <span class="pair"><button class="ctl" id="btn-step" title="Advance one period. The charts, the state strip and the log update; use it to check a mechanism period by period.">Step</button><button type="button" class="info" data-for="btn-step" aria-label="What Step does" aria-expanded="false">ⓘ</button></span>
       <button class="ctl primary" id="btn-play" title="Run the current run to its end, or pause it. At the end, Play starts a new run.">Play</button>
       <button class="ctl" id="btn-loop" title="Run after run, a new one each time the last ends, until pressed again. Shows the spread of paths, not just one.">Loop</button>
       <span class="grp"><label for="speed" title="Delay between periods when playing; left is slower.">speed</label><input type="range" id="speed" min="10" max="400" step="10" value="80"></span>
       <span class="grp"><label for="seed" title="Type a number to make the next run reproducible. Leave empty for a random seed; the log's first line records the one used.">seed</label><input type="number" id="seed" placeholder="random" min="0" step="1"></span>
-      <span class="grp"><button class="ctl" id="btn-batch" title="Average many independent runs (the number in the box). Charts show the mean with a band of one standard deviation; final-period means go to the log and the CSV.">Batch</button><input type="number" id="batch-S" value="200" min="2" step="1" aria-label="number of runs"> runs</span>
-      <button class="ctl off" id="btn-compare">Compare</button>
+      <span class="grp"><button class="ctl" id="btn-batch" title="Average many independent runs (the number in the box). Charts show the mean with a band of one standard deviation; final-period means go to the log and the CSV.">Batch</button><button type="button" class="info" data-for="btn-batch" aria-label="What Batch does" aria-expanded="false">ⓘ</button><input type="number" id="batch-S" value="200" min="2" step="1" aria-label="number of runs"> runs</span>
+      <span class="pair"><button class="ctl off" id="btn-compare">Compare</button><button type="button" class="info off" id="info-compare" data-for="btn-compare" aria-label="What Compare does" aria-expanded="false">ⓘ</button></span>
       <span class="grp"><button class="ctl" id="btn-sweep" title="Vary one parameter over its listed values, a batch per value, and plot the final-period outcome against it. Other parameters stay as set.">Sweep</button><select id="sweep-param" aria-label="parameter to sweep"></select></span>
       <button class="ctl" id="btn-csv" disabled title="Copy the numbers behind the last Batch, Compare or Sweep to the clipboard, and show them below.">Copy CSV</button>
       <span id="counter" title="Current period of this run, or what the charts are showing (a batch, a comparison, a sweep).">t = 0 / 0</span>
       <span id="readout"></span>
     </div>
+    <div id="ctl-tip" class="tip off" role="status"></div>
 
     <div id="charts"></div>
 
@@ -581,6 +587,19 @@ const App = {
     $('btn-compare').addEventListener('click', () => this.compare());
     $('btn-sweep').addEventListener('click', () => this.sweep());
     $('btn-csv').addEventListener('click', () => this.copyText(this.csv, 'csvbox', 'csv-text', 'csv-msg', 'CSV'));
+    // ⓘ beside Step, Batch and Compare: click to read the button's explanation (its hover text), click again, elsewhere or Esc to close
+    const tip = $('ctl-tip'); let tipFor = null;
+    const hideTip = () => { tip.classList.add('off'); if (tipFor) tipFor.setAttribute('aria-expanded', 'false'); tipFor = null; };
+    document.querySelectorAll('#controls .info').forEach(b => b.addEventListener('click', e => {
+      e.stopPropagation(); if (tipFor === b){ hideTip(); return; } hideTip();
+      tip.textContent = $(b.dataset.for).title; tip.classList.remove('off');
+      const r = b.getBoundingClientRect(), w = tip.offsetWidth;
+      tip.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px'; tip.style.top = (r.bottom + 6) + 'px';
+      b.setAttribute('aria-expanded', 'true'); tipFor = b;
+    }));
+    document.addEventListener('click', e => { if (tipFor && !tip.contains(e.target)) hideTip(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && tipFor) hideTip(); });
+    window.addEventListener('resize', hideTip);
     $('speed').addEventListener('input', e => { this.interval = 410 - parseInt(e.target.value); });
     this.interval = 410 - 80;
     // pop-up windows
@@ -681,7 +700,7 @@ const App = {
     $('title-el').textContent = this.model.name; document.title = this.model.name;
     this.model.p = {}; for (const d of this.model.params) this.model.p[d.key] = d.default;
     this.buildLeft(); this.buildCharts(this.model.charts); this.buildSweepSelect();
-    const cmp = $('btn-compare'); if (this.model.compare){ const c = this.model.compare; cmp.classList.remove('off'); cmp.textContent = `Compare ${c.labelOn || 'on'} vs ${c.labelOff || 'off'}`; cmp.title = `Run the batch twice, with ${c.key} = ${c.on} (“${c.labelOn || 'on'}”: solid lines, filled markers) and ${c.key} = ${c.off} (“${c.labelOff || 'off'}”: same colours, hollow markers, and a different line: solid becomes dashed, dashed becomes dotted, dotted becomes dashed), drawn on the same charts.`; } else cmp.classList.add('off');
+    const cmp = $('btn-compare'); if (this.model.compare){ const c = this.model.compare; cmp.classList.remove('off'); cmp.textContent = `Compare ${c.labelOn || 'on'} vs ${c.labelOff || 'off'}`; $('info-compare').classList.remove('off'); cmp.title = `Run the batch twice, with ${c.key} = ${c.on} (“${c.labelOn || 'on'}”: solid lines, filled markers) and ${c.key} = ${c.off} (“${c.labelOff || 'off'}”: same colours, hollow markers, and a different line: solid becomes dashed, dashed becomes dotted, dotted becomes dashed), drawn on the same charts.`; } else { cmp.classList.add('off'); $('info-compare').classList.add('off'); }
     $('sweep-area').classList.remove('on');
     this.reset(true);
   },
