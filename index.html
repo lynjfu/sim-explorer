@@ -104,6 +104,10 @@ textarea{width:100%;min-height:90px;font-family:var(--sans);font-size:12.5px;bac
 label.ctl input[type=file]{display:none}
 .box .row.off,.box label.off{display:none}
 .box select{width:auto;padding:4px 6px}
+/* Pseudocode: opens from the left panel and sits on the left, so the charts stay in view */
+.box.left{left:16px;transform:none;width:min(760px,calc(100vw - 32px))}
+.box pre.pc{white-space:pre;overflow-x:auto;font-size:11.5px;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:10px 12px}
+#btn-pc{align-self:flex-start}
 
 /* Controls bar */
 #controls{display:flex;align-items:center;gap:8px 28px;padding:8px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap;flex-shrink:0;background:var(--bg)}
@@ -182,6 +186,7 @@ label.ctl input[type=file]{display:none}
 <div id="main">
   <div id="left">
     <div class="block" id="about"><h2>Model</h2><div id="about-body"></div></div>
+    <button class="ctl" id="btn-pc" title="The model's code, step by step in plain words">Pseudocode</button>
     <div class="block"><h2>Parameters</h2><div id="params"></div></div>
   </div>
 
@@ -219,6 +224,12 @@ label.ctl input[type=file]{display:none}
       <div class="ttl">A model from a permalink</div>
       <p class="private">This permalink opens a model written by whoever shared it. It runs only in your browser; nothing is sent anywhere.</p>
       <div class="row"><button class="ctl primary" id="btn-link-run">Run the model in this permalink</button><button class="ctl" id="btn-link-skip">Show the built-in example instead</button><span id="linkrun-msg"></span></div>
+    </div>
+    <div id="pcbox" class="box left off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
+      <div class="ttl" id="pc-title">Pseudocode</div>
+      <p>What the model's code does, step by step in plain words, written with the code. Download zip saves it as <code>PSEUDOCODE.txt</code>.</p>
+      <pre class="pc" id="pc-text"></pre>
+      <div class="row"><button class="ctl" id="btn-copy-pc">Copy pseudocode</button><span id="pc-msg"></span></div>
     </div>
     <div id="dlbox" class="box off" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="Close" title="Close (Esc)">✕</button>
       <div class="ttl">Download code and results</div>
@@ -445,6 +456,8 @@ function runSelfCheck(models, opts){
     } else if (Array.isArray(m.about)) note(`WARN ${tag}: about is a list of paragraphs; the five-step form {task, representation, actions, feedback, transformation} is shorter and preferred`);
     if (typeof m.howToRead === 'string') m.howToRead = [m.howToRead];
     if (!m.about || (Array.isArray(m.about) && !m.about.length)) fail(`${tag}: about must be the five-step object {task, representation, actions, feedback, transformation}`);
+    if (m.pseudocode != null && typeof m.pseudocode !== 'string') fail(`${tag}: pseudocode, if given, must be a string`);
+    else if (!m.pseudocode || !m.pseudocode.trim()) note(`WARN ${tag}: no pseudocode; add the step-by-step pseudocode of the model as a string`);
     if (m.howToRead != null && !Array.isArray(m.howToRead)) fail(`${tag}: howToRead, if given, must be an array of sentences`);
     if (!(Number.isInteger(m.T) && m.T > 0)) fail(`${tag}: T must be a positive integer (periods per run)`);
     if (!Array.isArray(m.params) || !m.params.length) fail(`${tag}: params must be a non-empty array`);
@@ -587,6 +600,7 @@ const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;   
 const LINK_SERVICE = 'https://sim-links.carolynfu.workers.dev';   // links/worker.js, deployed on Cloudflare
 const STORE_CODE = 'explorer-model-code';
 const ABOUT_KEYS = [['task','Task environment'],['representation','Representation'],['actions','Actions'],['feedback','Feedback'],['transformation','Transformation']];
+const pcText = m => (m && typeof m.pseudocode === 'string') ? m.pseudocode.replace(/^\s*\n/, '').replace(/\s+$/, '') + '\n' : '';   // trims the blank first and last lines of a template string
 const aboutHtml = ab => Array.isArray(ab) ? ab.map(p => `<p>${p}</p>`).join('') : ABOUT_KEYS.filter(([k]) => ab[k]).map(([k, lab]) => `<p><b>${lab}.</b> ${ab[k]}</p>`).join('');
 
 const App = {
@@ -623,6 +637,8 @@ const App = {
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.panel) this.closePanel(); });
     $('chip-load').addEventListener('click', () => this.togglePanel('loader'));
     $('chip-check').addEventListener('click', () => this.togglePanel('checkbox'));
+    $('btn-pc').addEventListener('click', () => this.togglePanel('pcbox'));
+    $('btn-copy-pc').addEventListener('click', () => this.copyText(pcText(this.model), null, null, 'pc-msg', 'Pseudocode'));
     // the address must match what runs: once you load your own model or go back to the example, the permalink leaves the address bar
     const dropLink = () => { if (new URLSearchParams(location.search).has('m')) history.replaceState(null, '', location.pathname + location.hash); };
     const loaded = ok => { if (ok) dropLink(); if (ok && this.panel === 'loader') this.closePanel(); };   // a model that loads and passes: show it
@@ -649,7 +665,7 @@ const App = {
   },
 
   // ---- pop-up windows: at most one open; ✕, Esc or a click outside closes it ----
-  PANELS: ['loader', 'checkbox', 'linkbox', 'linkrun', 'dlbox'],
+  PANELS: ['loader', 'checkbox', 'linkbox', 'linkrun', 'dlbox', 'pcbox'],
   panel: null,
   openPanel(id){
     for (const b of this.PANELS) $(b).classList.toggle('off', b !== id);
@@ -724,6 +740,9 @@ const App = {
   buildLeft(){
     const m = this.model;
     $('about-body').innerHTML = aboutHtml(m.about);
+    $('pc-title').textContent = 'Pseudocode: ' + (m.name || m.id);
+    $('pc-text').textContent = pcText(m) || 'This model has no pseudocode yet. Ask your AI assistant: “please add the pseudocode field to model.js”.';
+    $('btn-copy-pc').classList.toggle('off', !pcText(m)); $('pc-msg').textContent = '';
     const box = $('params'); box.innerHTML = '';
     for (const d of m.params){
       const row = document.createElement('div'); row.className = 'param';
@@ -1070,6 +1089,7 @@ const App = {
       `  runs.csv       one row per run per period${cmp ? ' per setting' : ''} (${S * T * conds.length} rows). Columns: ${cmp ? 'condition, ' : ''}run, seed, period, then every number the model records each period.`,
       `  summary.csv    mean and standard deviation across runs, per period${cmp ? ' and setting' : ''}. The same numbers as ${cmp ? 'Compare' : 'Batch'} on the page with this seed and number of runs.`,
       '  final.csv      each run\'s values in the last period.',
+      ...(pcText(m) ? ['  PSEUDOCODE.txt the model, step by step in plain words, as written with the code'] : []),
       '  settings.json  parameters, seeds and run counts, for reproducing these numbers.',
       '  charts/        the charts as images:',
       ...chartWords.map(w => '                   ' + w),
@@ -1078,6 +1098,7 @@ const App = {
     ].join('\n');
     add('README.txt', readme);
     if (code) add('model.js', code);
+    if (pcText(m)) add('PSEUDOCODE.txt', `${m.name || m.id}: pseudocode\n` + pcText(m));
     // the page with this model inside, so index.html runs on its own, anywhere
     const tag = '<script src="model.js"><' + '/script>';   // split so the browser does not read it as the end of this script
     add('index.html', (code && PAGE_SOURCE.includes(tag)) ? PAGE_SOURCE.replace(tag, () => '<script>\n' + code.replace(/<\/script/gi, '<\\/script') + '\n<' + '/script>') : PAGE_SOURCE);

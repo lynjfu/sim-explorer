@@ -27,3 +27,18 @@ body = open(sys.argv[1], encoding='utf-8').read().split('\n', 2)[2]
 open(sys.argv[2], 'w', encoding='utf-8').write('// Built by scripts/build_prompt.sh from 2_PROMPT.md. Do not edit by hand.\nwindow.PROMPT_BODY = ' + json.dumps(body, ensure_ascii=False) + ';\n')
 PY
 echo "wrote $DIR/start/prompt.js"
+# PSEUDOCODE.md: the example model's pseudocode field, for reading on GitHub (also copied into examples/ai-advisor/).
+python3 - "$DIR/model.js" "$DIR/PSEUDOCODE.md" "$DIR/examples/ai-advisor/PSEUDOCODE.md" <<'PY'
+import re, sys
+src = open(sys.argv[1], encoding='utf-8').read()
+m = re.search(r"pseudocode:\s*`(.*?)`", src, re.S)
+name = re.search(r"name:\s*'([^']*)'", src)
+if not m: sys.exit('model.js has no pseudocode field')
+body = m.group(1).strip('\n').rstrip()
+text = (f"# Pseudocode: {name.group(1) if name else 'the example model'}\n\n"
+        "The built-in example's code (`model.js`), step by step in plain words. Generated from the `pseudocode` field of `model.js` "
+        "by `scripts/build_prompt.sh`; do not edit by hand. In the explorer, press **Pseudocode** on the left to see the pseudocode "
+        f"of whichever model is running.\n\n```text\n{body}\n```\n")
+for out in sys.argv[2:]: open(out, 'w', encoding='utf-8').write(text)
+PY
+echo "wrote $DIR/PSEUDOCODE.md and $DIR/examples/ai-advisor/PSEUDOCODE.md"

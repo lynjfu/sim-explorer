@@ -91,6 +91,7 @@ Follow `MODEL_CONTRACT.md` exactly. In addition:
 - Give every `seg` parameter the values the student will sweep. A `range` parameter is sweepable only if it carries a `sweep: [values]` list.
 - Keep a run cheap: a Batch of 200 runs should finish in under about five seconds in a browser. If it will not, reduce the defaults (rounds, number of agents, N) and say so.
 - Write `about` as five short entries, `{ task, representation, actions, feedback, transformation }`, one or two sentences each, in the student's own terms (the five questions they answered, condensed). That is all the model description the page shows; keep it short. Give each chart a one-sentence `note` on what to look for in it; it appears only as hover text behind an ⓘ beside the chart title, so keep it short. Do not write `howToRead`: the page no longer shows it. Never describe line styles (the page writes those from the series fields).
+- Write `pseudocode`: the code, step by step in plain words, following it line by line (see the contract). It must describe what the code does, not what the student wrote: if the two differ, the code is wrong; fix the code. Whenever you change the code, change the pseudocode to match.
 - Declare two to four `checks`: things the model must do if it is right, in plain words. Examples: "with the AI switched off, nobody follows it"; "when the task has one best answer, everyone finds it"; "when exploration is zero, nobody ever tries something new". Prefer exact or comparative checks over numeric thresholds you cannot compute (see the contract). The page runs them when the model loads.
 - The patterns in the contract (softmax choice, move-part-way updating) are offers, not defaults. If the student described a different rule ("pick the best, sometimes try one at random"), implement the student's rule.
 - Follow the chart rules: every line in a chart is told apart by its dash pattern and marker shape before its colour; colours are from the page's list; one to three lines per chart. If there is an AI on/off switch, check the lines will still differ when Compare draws each one twice (see the contract), and keep series labels short, since the legend always shows them in full.
@@ -160,6 +161,7 @@ Never call `Math.random`. All randomness goes through the `rng` handed to each m
 | `id` | string | Letters and digits only. Used in element ids. |
 | `name` | string | Tab label and page heading. Two to five words. |
 | `about` | object | The "Model" block: five short entries, one or two sentences each, in plain language: `{ task, representation, actions, feedback, transformation }`. The page labels them "Task environment", "Representation", "Actions", "Feedback", "Transformation". Say what the agents do, not how the code does it; numbers and symbols that are parameters (N, K, σ, φ) may be named. An array of paragraphs is still accepted but is longer than people want to read. |
+| `pseudocode` | string | Expected. The model's code, step by step in plain words, as a template string (backticks). Follow the code line by line where possible: one pseudocode line per line of code, in the same order, with the same loops and conditions and the same variable and parameter names, so a reader can lay it next to the code. Sections, in this order: `PARAMETERS` (one line), `ONCE PER RUN: the task environment` (`generateEnvironment`), `ONCE PER RUN: the agents` (`initState`; call them what the model calls them, e.g. "the people"), `EACH PERIOD` (`stepPeriod`), then `RECORD for the charts` (one line per chart series: its key and how it is computed). Use `←` for assignment and indentation for nesting; keep every line under 90 characters (put a long remark on its own line, in brackets, below the line it explains); mark every `// CHOICE:` in brackets on its line, e.g. `(a tie means stay)`. Describe helpers the page provides (such as `generateNK`) in words, not as a call. The page shows it in a pop-up from the left panel, and Download zip saves it as `PSEUDOCODE.txt`. Keep it in step with the code: change one, change the other. |
 | `howToRead` | string[] | Not shown on the page any more; do not write it. Older models that have it still load. |
 | `T` | integer | Rounds (periods) per run. |
 | `params` | object[] | Parameter definitions, below. |
@@ -280,6 +282,58 @@ const NK_AI_ADVISOR = {
     feedback: 'The person sees the true performance of the alternative they checked.',
     transformation: 'A switch moves the person to the new project. Trust starts at p0 and, after a followed recommendation, moves toward 1 at rate φ if the alternative was better and toward 0 at rate φ if it was not. The advisor itself never changes.',
   },
+  // The same model as the code below, step by step, in plain words. One pseudocode line per line of code where possible.
+  pseudocode: `
+PARAMETERS
+  K ruggedness · ai on/off · σ advisor error · p0 initial trust · φ trust learning rate
+  M people · N choices · T = 60 periods
+
+ONCE PER RUN: the task environment
+  draw an NK landscape:
+    every project is N yes/no choices (2^N projects)
+    each choice's payoff depends on itself and the next K choices, in a ring
+    payoff of choice i, for each setting of those K+1 choices ← uniform draw in [0,1)
+    performance of a project ← mean of its N payoffs
+    best ← the highest performance of any project
+
+ONCE PER RUN: the people
+  for each person j = 1..M:
+    project[j] ← a random project
+    trust[j]   ← p0
+  t ← 0
+
+EACH PERIOD (repeated T times)
+  for each person j = 1..M:
+      (everyone acts on their own project; order does not matter)
+    current ← project[j]
+    if ai = on and a uniform draw in [0,1) < trust[j]:
+        (follow the advisor this period)
+      for each choice i = 1..N:
+        alternative ← current with choice i flipped
+        estimate    ← true performance of alternative + σ × a standard normal draw
+      candidate ← the alternative with the highest estimate
+    else:
+        (search alone)
+      candidate ← current with one random choice flipped
+    better ← performance of candidate > performance of current
+        (strictly greater: a tie means stay)
+    if better: project[j] ← candidate
+    if this person followed the advisor:
+      if better: trust[j] ← trust[j] + φ × (1 − trust[j])     (toward 1)
+      else:      trust[j] ← trust[j] − φ × trust[j]           (toward 0)
+  t ← t + 1
+
+  RECORD for the charts
+    mean_perf    ← mean over people of performance(project) ÷ best
+    best_perf    ← highest performance(project) ÷ best
+    mean_trust   ← mean of trust
+    share_follow ← share of people who followed the advisor this period
+    diversity    ← mean over all pairs of people of
+                     (number of choices on which their projects differ) ÷ N
+    share_peak   ← share of people whose project is a local peak
+                     (no single flip improves it)
+`,
+
   T: 60,
 
   params: [

@@ -14,7 +14,7 @@ This repository turns a simulation you have described in words into a model you 
 4. **Answer its questions.** It will ask about anything you left unclear, in plain words, at most six questions, then show you a short table of what it understood. Correct anything wrong. Then it writes `model.js`.
 5. **Run it.** Save the code as `model.js` in your folder, replacing the file of that name, and open `index.html` in your browser. The page checks the code and says "self-check: passed" at the top right if it runs correctly. If it says "failed", click it, copy the report, and paste it back to the assistant with "please fix this". The first open needs an internet connection, for the chart library.
 6. **Explore.** Change parameters and watch. Press **Compare** to see with and without the AI. Compare what you expected (question 7 of the assignment) with what you see.
-7. **Save your results.** **Download zip**, in the top-right corner, runs the model as many times as you choose at the current settings and saves the code, the page, every run's numbers, the averages, the charts as images and the settings in one zip.
+7. **Save your results.** **Download zip**, in the top-right corner, runs the model as many times as you choose at the current settings and saves the code, the page, every run's numbers, the averages, the charts as images, the pseudocode and the settings in one zip.
 
 Your model lives in your folder as `model.js`. Keep that file; it is what you hand in. Nothing leaves your computer.
 
@@ -24,7 +24,7 @@ The example model runs at **https://carolynjfu.com/sim-explorer/**. That page ca
 
 ## What the page shows
 
-Your model's parameters on the left. On the right: Step through one run a round at a time, Play it, Loop it; a chart of the system's performance over time and, where it applies, one of how different the agents are from one another, plus sometimes one about the AI; a strip showing the current state; a log with one readable line per round. Batch averages many runs. Compare runs the same batch with your AI agent switched on and off and overlays the two. Sweep varies one parameter and plots the final outcome against it. Every run has a seed, so a run that showed something can be replayed. Copy CSV takes the numbers out.
+Your model's description and parameters on the left, with a **Pseudocode** button that shows the model's code step by step in plain words. On the right: Step through one run a round at a time, Play it, Loop it; a chart of the system's performance over time and, where it applies, one of how different the agents are from one another, plus sometimes one about the AI; a strip showing the current state; a log with one readable line per round. Batch averages many runs. Compare runs the same batch with your AI agent switched on and off and overlays the two. Sweep varies one parameter and plots the final outcome against it. Every run has a seed, so a run that showed something can be replayed. Copy CSV takes the numbers out.
 
 ## What is in the folder
 
@@ -34,6 +34,7 @@ Your model's parameters on the left. On the right: Step through one run a round 
 | `2_PROMPT.md` | Paste this whole file into your AI assistant, then your answers. Built from `docs/` plus the example model. |
 | `index.html` | The explorer page. Never edited. |
 | `model.js` | The built-in example model (people searching for a good project with an AI advisor). Yours replaces it. |
+| `PSEUDOCODE.md` | The example model's code, step by step in plain words, taken from the `pseudocode` field of `model.js`. In the page, press **Pseudocode** on the left to see it for whichever model is running. |
 | `examples/ai-advisor/` | That example end to end: the written answers, the `model.js`, and the assumption list that came with it. |
 | `docs/LLM_INSTRUCTIONS.md`, `docs/MODEL_CONTRACT.md` | What the assistant does and what `model.js` must contain. For the assistant; you do not need to read them. |
 | `start/` | Files for the guided page, which lives in its own repository (github.com/lynjfu/sim-setup, served at carolynjfu.com/sim-setup/): `prompt.js`, built from `2_PROMPT.md`, and `example.gif`. Its `index.html` forwards the old address to the new one. |
