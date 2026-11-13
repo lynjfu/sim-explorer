@@ -50,3 +50,5 @@ Your model's description and parameters on the left, with a **Pseudocode** butto
 - **Claude Code.** The folder carries a skill at `.claude/skills/sim-explorer/`; in Claude Code (terminal or web) a student can open the folder and say "build my model from my answers". `scripts/install_skill.sh` installs the same skill user-wide.
 
 The modelling vocabulary follows Puranam, Stieglitz, Osman and Pillutla (2015), "Modelling bounded rationality in organizations: progress and prospects", *Academy of Management Annals* 9(1).
+
+Licensed under the MIT License (see `LICENSE`). © 2026 Carolyn Fu.
