@@ -309,6 +309,7 @@ function fmt(x, d=3){ return (x == null || Number.isNaN(x)) ? '—' : Number(x).
 function mean(a){ let s = 0, n = 0; for (const v of a){ if (v != null && !Number.isNaN(v)){ s += v; n++; } } return n ? s/n : null; }
 function final(B, key){ return B.mean[key][B.T-1]; }                      // final-period batch mean of a series
 
+// The NK landscape follows Maciej Workiewicz's NK model code https://github.com/Mac13kW/NK_model
 // NK landscape generator. N bits, each bit interacting with K others.
 // interaction: 'ring' = bit i interacts with the next K bits in ring order (adjacent-ring convention);
 //              'random' = K distinct random partners per bit.

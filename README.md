@@ -49,6 +49,8 @@ Your model's description and parameters on the left, with a **Pseudocode** butto
 - **One-file copy.** `scripts/inline_model.sh [model.js] out.html` puts the model inside the page, for emailing or publishing as a single file.
 - **Claude Code.** The folder carries a skill at `.claude/skills/sim-explorer/`; in Claude Code (terminal or web) a student can open the folder and say "build my model from my answers". `scripts/install_skill.sh` installs the same skill user-wide.
 
+The NK landscape follows Maciej Workiewicz's NK model code https://github.com/Mac13kW/NK_model.
+
 The modelling vocabulary follows Puranam, Stieglitz, Osman and Pillutla (2015), "Modelling bounded rationality in organizations: progress and prospects", *Academy of Management Annals* 9(1).
 
 Licensed under the MIT License (see `LICENSE`). © 2026 Carolyn Fu.
